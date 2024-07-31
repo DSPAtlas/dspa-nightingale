@@ -8,9 +8,8 @@ import css from "rollup-plugin-css-only";
 export default {
   input: "src/index.ts",
   output: {
-    dir: "./dist",
-    format: "es",
-    sourcemap: true,
+    dir: "dist/bundle.js",
+    format: "esm"
   },
   plugins: [
     css(),

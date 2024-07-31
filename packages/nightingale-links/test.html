@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nightingale Links</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/typescript/4.5.4/typescript.min.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "@nightingale-elements/nightingale-links": "./dist/bundle.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Import the component -->
+  <script type="module">
+    import "@nightingale-elements/nightingale-links";
+  </script>
+
+  <!-- Use the component just as you would a regular HTML tag -->
+  <nightingale-links
+    id="links"
+    height="100"
+    length="100"
+    min-distance="3"
+    min-probability="0.99"
+  ></nightingale-links>
+
+  <script type="module">
+    // Wait for the DOM to load and the component to be defined
+    window.addEventListener('DOMContentLoaded', () => {
+      const data = `
+        x y a b score label
+        1 2 0 8 0.9999824 l1
+        2 1 0 8 0.9999824 l1
+        29 36 0 8 0.9999824 l2
+        50 28 0 8 0.9999750 l2
+        46 27 0 8 0.9999180 l2
+        47 27 0 8 0.9999129 l
+        43 27 0 8 0.9998918 f
+        47 21 0 8 0.9998869 f
+        42 95 0 8 0.9998656 f
+        50 11 0 8 0.9998630 f
+        15 84 0 8 0.9998622 f
+        23 21 0 8 0.9998603 f
+        49 53 0 8 0.9998345 f
+      `;
+
+      const linksElement = document.getElementById('links');
+      linksElement.contacts = data;
+    });
+  </script>
+</body>
+</html>

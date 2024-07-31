@@ -1,6 +1,7 @@
 import { customElement, property } from "lit/decorators.js";
 import { PropertyValues } from "lit";
-import { scaleLinear, select, Selection } from "d3";
+//import { scaleLinear, select, Selection } from "https://d3js.org/d3.v7.min.js";
+import{ scaleLinear, select, Selection } from "d3";
 
 import NightingaleTrack from "@nightingale-elements/nightingale-track";
 import {
@@ -11,6 +12,7 @@ import {
   ArrayOfNumberArray,
   ContactObject,
   LinksData,
+  LabeledNumberArray,
 } from "./links-parser";
 import NightingaleElement from "@nightingale-elements/nightingale-new-core";
 
@@ -45,10 +47,31 @@ class NightingaleLinks extends NightingaleTrack {
   @property({ type: Number, attribute: "min-probability" })
   minProbability?: number = DEFAULT_PROBABILITY;
 
-  _rawData?: ArrayOfNumberArray | null = null;
+  _rawData?: LabeledNumberArray[] | null = null;
   _linksData?: ArrayOfNumberArray | null = null;
   #contacts?: ContactObject;
   contactPoints?: Selection<SVGCircleElement, number, SVGGElement, unknown>;
+
+  @property({ type: Object })
+  clickedData: number | null = null;
+
+  private labels: { [key: number]: string } = {};
+  private tooltip: HTMLDivElement;
+
+  constructor() {
+    super();
+    // Create tooltip element
+    this.tooltip = document.createElement('div');
+    this.tooltip.style.position = 'absolute';
+    this.tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    this.tooltip.style.color = 'white';
+    this.tooltip.style.padding = '5px 10px';
+    this.tooltip.style.borderRadius = '5px';
+    this.tooltip.style.pointerEvents = 'none';
+    this.tooltip.style.visibility = 'hidden';
+    document.body.appendChild(this.tooltip);
+  }
+
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (
@@ -76,6 +99,14 @@ class NightingaleLinks extends NightingaleTrack {
     } else {
       throw new Error("data is not in a valid format");
     }
+    this.labels = {};
+    this._rawData.forEach(row => {
+      if (row.length === 4) {
+        const [n1, n2, p, label] = row;
+        this.labels[+n1] = label as string;
+        this.labels[+n2] = label as string;
+      }
+    });
     this.#contacts = getContactsObject(
       filterContacts(
         this._rawData,
@@ -85,6 +116,7 @@ class NightingaleLinks extends NightingaleTrack {
     );
     this.createTrack();
   }
+
   get selected() {
     return this.#contacts?.selected;
   }
@@ -154,16 +186,18 @@ class NightingaleLinks extends NightingaleTrack {
         .attr("fill", (d: number) => this._getColor(d))
         .attr("id", (d: number) => `cp_${d}`)
         .style("stroke-width", 2)
-        .on("mouseover", (_: Event, d: number) => {
+        .on("mouseover", (event: MouseEvent, d: number) => {
           if (this.#contacts?.isHold) return;
           this._dispatchSelectNode(d);
           this.refreshSelected();
+          this.showTooltip(event, d);
         })
         .on("mouseout", () => {
           if (!this.#contacts || this.#contacts?.isHold) return;
           this.#contacts.selected = undefined;
           this.dispatchEvent(getHighlightEvent("mouseout", this));
           this.refreshSelected();
+          this.hideTooltip();
         })
         .on("click", (event: Event, d: number) => {
           event.preventDefault();
@@ -171,8 +205,23 @@ class NightingaleLinks extends NightingaleTrack {
           this.#contacts.isHold = true;
           this._dispatchSelectNode(d);
           this.refreshSelected();
+          
         });
-    this._linksData = contactObjectToLinkList(this.#contacts.contacts);
+
+      // Add labels
+      if (contactGroup) {
+        contactGroup.selectAll(".contact-label")
+          .data(Object.keys(this.#contacts.contacts).map(Number))
+          .enter()
+          .append("text")
+          .attr("class", "contact-label")
+          .attr("x", (d: number) => this.getXFromSeqPosition(d) + this.getSingleBaseWidth() / 2)
+          .attr("y", this.height * 0.5 - 10) // Adjust the position as needed
+          .text((d: number) => this.labels[d] || "")
+          .attr("text-anchor", "middle");
+
+        this._linksData = contactObjectToLinkList(this.#contacts.contacts);
+      }
   }
 
   getRadius(isSelected: boolean): number {
@@ -241,6 +290,7 @@ class NightingaleLinks extends NightingaleTrack {
       ?.attr("d", (d: number[]) => this.arc(d))
       .attr("stroke-width", this.#contacts.isHold ? 3 : 1);
   }
+  
   refresh(): void {
     if (!this.#contacts || !this.contactPoints) return;
     this.contactPoints
@@ -250,8 +300,19 @@ class NightingaleLinks extends NightingaleTrack {
           this.getXFromSeqPosition(d) + this.getSingleBaseWidth() / 2,
       )
       .attr("cy", this.height * 0.5);
+    
+  this.refreshSelected();
+  }
 
-    this.refreshSelected();
+  private showTooltip(event: MouseEvent, d: number): void {
+    this.tooltip.innerHTML = `Label: ${this.labels[d]}<br/>Info: ${d}`;
+    this.tooltip.style.left = `${event.pageX + 10}px`;
+    this.tooltip.style.top = `${event.pageY + 10}px`;
+    this.tooltip.style.visibility = 'visible';
+  }
+
+  private hideTooltip(): void {
+    this.tooltip.style.visibility = 'hidden';
   }
 }
 

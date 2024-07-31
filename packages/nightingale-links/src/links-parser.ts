@@ -23,13 +23,20 @@ export type ContactEntry = [number, Set<number>];
 
 export type ContactLink = Array<number>;
 
-export const parseToRowData = (text: string): ArrayOfNumberArray =>
+export type LabeledNumberArray = Array<number | string>;
+
+export const parseToRowData = (text: string): Array<LabeledNumberArray> =>
   text
     .split("\n")
     .slice(1)
     .filter((line) => line.trim() !== "")
-    .map((line): number[] => {
+    .map((line): LabeledNumberArray => {
       const values = line.trim().split(" ");
+      if (values.length === 6) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const [n1, n2, _, __, p, label] = values;
+        return [+n1, +n2, +p, label];
+      }
       if (values.length === 5) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [n1, n2, _, __, p] = values;
@@ -43,12 +50,12 @@ export const parseToRowData = (text: string): ArrayOfNumberArray =>
     });
 
 export const filterContacts = (
-  data: ArrayOfNumberArray,
+  data: Array<LabeledNumberArray>,
   minDistance: number,
   minProbability: number,
-): ArrayOfNumberArray =>
+): Array<LabeledNumberArray> =>
   data.filter(([n1, n2, p]) => {
-    return Math.abs(n1 - n2) >= minDistance && p > minProbability;
+    return Math.abs(+n1 - +n2) >= minDistance && +p > minProbability;
   });
 
 export const parseLinksAssociative = (
@@ -64,20 +71,20 @@ export const parseLinksAssociative = (
   const n2set: NumberArray = {};
   const sets: ArrayOfNumberArray = [];
   rawData.forEach(([n1, n2]) => {
-    if (!n2set[n1] && !n2set[n2]) {
-      n2set[n1] = sets.length;
-      n2set[n2] = sets.length;
-      sets.push([n1, n2]);
-    } else if (n2set[n1] && !n2set[n2]) {
-      n2set[n2] = n2set[n1];
-      sets[n2set[n1]].push(n2);
-    } else if (!n2set[n1] && n2set[n2]) {
-      n2set[n1] = n2set[n2];
-      sets[n2set[n1]].push(n1);
-    } else if (n2set[n1] && n2set[n2] && n2set[n1] !== n2set[n2]) {
-      sets[n2set[n2]].forEach((n) => {
-        sets[n2set[n1]].push(n);
-        n2set[n] = n2set[n1];
+    if (!n2set[+n1] && !n2set[+n2]) {
+      n2set[+n1] = sets.length;
+      n2set[+n2] = sets.length;
+      sets.push([+n1, +n2]);
+    } else if (n2set[+n1] && !n2set[+n2]) {
+      n2set[+n2] = n2set[+n1];
+      sets[n2set[+n1]].push(+n2);
+    } else if (!n2set[+n1] && n2set[+n2]) {
+      n2set[+n1] = n2set[+n2];
+      sets[n2set[+n1]].push(+n1);
+    } else if (n2set[+n1] && n2set[+n2] && n2set[+n1] !== n2set[+n2]) {
+      sets[n2set[+n2]].forEach((n) => {
+        sets[n2set[+n1]].push(n);
+        n2set[n] = n2set[+n1];
       });
     }
   });
@@ -99,14 +106,14 @@ export const parseLinks = (
 };
 
 export const getContactsObject = (
-  contacts: ArrayOfNumberArray,
+  contacts: Array<LabeledNumberArray>,
 ): ContactObject => {
   const contactsObj: Contacts = {};
   contacts.forEach(([n1, n2]) => {
-    if (!contactsObj[n1]) contactsObj[n1] = new Set<number>();
-    if (!contactsObj[n2]) contactsObj[n2] = new Set<number>();
-    contactsObj[n1].add(n2);
-    contactsObj[n2].add(n1);
+    if (!contactsObj[+n1]) contactsObj[+n1] = new Set<number>();
+    if (!contactsObj[+n2]) contactsObj[+n2] = new Set<number>();
+    contactsObj[+n1].add(+n2);
+    contactsObj[+n2].add(+n1);
   });
   return {
     contacts: contactsObj,

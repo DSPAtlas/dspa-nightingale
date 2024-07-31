@@ -10,7 +10,7 @@
   "type": "module",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rollup --config ../../rollup.config.mjs",
+    "build": "rollup --config rollup.config.js",
     "test": "../../node_modules/.bin/jest --config ../../jest.config.js ./tests/*"
   },
   "publishConfig": {
@@ -32,7 +32,13 @@
   "dependencies": {
     "@nightingale-elements/nightingale-new-core": "^5.0.0",
     "@nightingale-elements/nightingale-track": "^5.0.0",
-    "d3": "7.9.0",
-    "lodash-es": "^4.17.15"
-  }
+    "d3": "^7.9.0",
+    "lit": "^3.1.4",
+    "lodash-es": "^4.17.15",
+    "typescript": "^5.5.4"
+  },
+  "devDependencies": {
+  "rollup": "^2.0.0",
+  "rollup-plugin-terser": "7.0.2"
+}
 }
