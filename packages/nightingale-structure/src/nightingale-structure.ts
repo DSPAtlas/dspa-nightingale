@@ -85,6 +85,9 @@ class NightingaleStructure extends withManager(
   @property({ type: String })
   "custom-download-url"?: string;
 
+  @property({ type: String })
+  "barcode-sequence"?: string;
+
   @state()
   selectedMolecule?: {
     id: string;
@@ -106,17 +109,6 @@ class NightingaleStructure extends withManager(
 
   protected render() {
     return html`<style>
-        /* nightingale-structure h4 {
-          display: inline;
-          margin-right: 1em;
-        } */
-
-        /* @property --custom-structure-height {
-          syntax: "<length-percentage>";
-          inherits: false;
-          initial-value: 480px;
-        } */
-
         nightingale-structure {
           width: 100%;
         }
@@ -172,7 +164,6 @@ class NightingaleStructure extends withManager(
       getStructureViewer(structureViewerDiv, this.updateHighlight).then(
         (structureViewer) => {
           this.#structureViewer = structureViewer;
-          // Remove initial "#" and possible trailing opacity value
           const color = this["highlight-color"].substring(1, 7);
           this.#structureViewer.changeHighlightColor(parseInt(color, 16));
         },
@@ -191,16 +182,17 @@ class NightingaleStructure extends withManager(
       this.highlightChain();
     }
     if (changedProperties.has("highlight-color")) {
-      // Remove initial "#" and possible trailing opacity value
       const color = this["highlight-color"].substring(1, 7);
       this.#structureViewer?.changeHighlightColor(parseInt(color, 16));
-      this.#structureViewer?.plugin.handleResize();
+      this.#structureViewer?.handleResize();
+    }
+    if (changedProperties.has("barcode-sequence")) {
+      this.applyBarcodeSequence();
     }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    // Clean up
     this.#structureViewer?.plugin.dispose();
   }
 
@@ -230,7 +222,6 @@ class NightingaleStructure extends withManager(
     return this["structure-id"].startsWith("AF-");
   }
 
-  // Use the url above for testing
   async selectMolecule(): Promise<void> {
     if (!this["structure-id"] || !this["protein-accession"]) {
       return;
@@ -241,12 +232,10 @@ class NightingaleStructure extends withManager(
       const afInfo = afPredictions.find(
         (prediction) => prediction.entryId === this["structure-id"],
       );
-      // Note: maybe use bcif instead of cif, but I have issues loading it atm
       if (afInfo?.cifUrl) {
         await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, false);
         this.clearMessage();
       }
-      // mappings = await this.#structureViewer.loadAF(afPredictions.b);
     } else {
       const pdbEntry = await this.loadPDBEntry(this["structure-id"]);
       mappings =
@@ -290,7 +279,6 @@ class NightingaleStructure extends withManager(
   updateHighlight(
     sequencePositions: { chain: string; position: number }[],
   ): void {
-    // sequencePositions assumed to be in PDB coordinate space
     if (
       !sequencePositions?.length ||
       sequencePositions.some((pos) => !Number.isInteger(pos.position))
@@ -342,6 +330,47 @@ class NightingaleStructure extends withManager(
       cancelable: true,
     });
     this.dispatchEvent(event);
+  }
+
+    
+  applyBarcodeSequence(): void {
+    if (!this["barcode-sequence"]) {
+      this.#structureViewer?.clearBarcodeSequence();
+      return;
+    }
+    let allPositions;
+    try {
+      allPositions = this.highlightedRegion.segments
+        .flatMap(({ start, end }) => {
+          if (this.isAF()) {
+            return {
+              start,
+              end,
+              chain: "A",
+            };
+          }
+          return translatePositions(
+            start,
+            end,
+            "UP_PDB",
+            this.selectedMolecule?.mappings,
+          );
+        })
+        .filter(Boolean);
+    } catch (error) {
+      if (error instanceof PositionMappingError) {
+        this.#structureViewer?.clearBarcodeSequence();
+        this.showMessage("Error", error.message);
+        return;
+      }
+      throw error;
+    }
+    if (!allPositions?.length) {
+      this.#structureViewer?.clearBarcodeSequence();
+      return;
+    }
+    this.#structureViewer?.applyBarcodeSequence(allPositions);
+    this.clearMessage();
   }
 
   highlightChain(): void {

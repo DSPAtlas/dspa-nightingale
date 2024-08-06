@@ -82,6 +82,7 @@ const spec: PluginSpec = {
 
 type SequencePosition = { chain: string; position: number };
 type Range = { chain: string; start: number; end: number };
+type BarcodeSequence = { pos: number; chain: string; color: string };
 
 export type StructureViewer = {
   plugin: PluginContext;
@@ -91,6 +92,8 @@ export type StructureViewer = {
   clearHighlight(): void;
   changeHighlightColor(color: number): void;
   handleResize(): void;
+  applyBarcodeSequence(barcodesequence: BarcodeSequence[]): void;
+  clearBarcodeSequence(): void;
 };
 
 export const getStructureViewer = async (
@@ -106,16 +109,10 @@ export const getStructureViewer = async (
     throw new Error("Failed to init Mol*");
   }
 
-  // const data = await plugin.builders.data.download({ url: '...' }, { state: { isGhost: true } });
-  // const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
-  // await plugin.builders.structure.hierarchy.applyPreset(trajectory, "default");
-
   plugin.behaviors.interaction.click.subscribe((event) => {
     if (StructureElement.Loci.is(event.current.loci)) {
       const loc = StructureElement.Location.create();
       StructureElement.Loci.getFirstLocation(event.current.loci, loc);
-      // auth_seq_id  : UniProt coordinate space
-      // label_seq_id : PDB coordinate space
       const sequencePosition = StructureProperties.residue.label_seq_id(loc);
       const chain = StructureProperties.chain.auth_asym_id(loc);
       onHighlightClick([{ position: sequencePosition, chain: chain }]);
@@ -159,9 +156,6 @@ export const getStructureViewer = async (
       );
     },
     highlight(ranges) {
-      // What nightingale calls "highlight", mol* calls "select"
-      // The query in this method is over label_seq_id so the provided start & end
-      // coordinates must be in PDB space
       const data =
         plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj
           ?.data;
@@ -193,21 +187,58 @@ export const getStructureViewer = async (
       plugin.managers.camera.focusLoci(loci);
       plugin.managers.interactivity.lociSelects.selectOnly({ loci });
     },
+
+    applyBarcodeSequence(barcodesequence) {
+      const data =
+        plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj
+          ?.data;
+      if (!data) {
+        return;
+      }
+      const lociList = barcodesequence.map(({ pos, chain, color }) => {
+        const sel = Script.getStructureSelection(
+          (Q) =>
+            Q.struct.generator.atomGroups({
+              "residue-test": Q.core.logic.and([
+                Q.core.rel.eq([
+                  Q.struct.atomProperty.macromolecular.label_seq_id(),
+                  pos,
+                ]),
+                Q.core.rel.eq([
+                  Q.struct.atomProperty.macromolecular.auth_asym_id(),
+                  chain,
+                ]),
+              ]),
+            }),
+          data,
+        );
+        return { loci: StructureSelection.toLociWithSourceUnits(sel), color };
+      });
+      lociList.forEach(({ loci, color }) => {
+        plugin.managers.interactivity.lociSelects.selectOnly({ loci, col: Color(color) });
+      });
+    },
+
     clearHighlight() {
       plugin.managers.interactivity.lociSelects.deselectAll();
       PluginCommands.Camera.Reset(plugin, {});
     },
+
     changeHighlightColor(color: number) {
       PluginCommands.Canvas3D.SetSettings(plugin, {
         settings: ({ renderer, marking }) => {
-          // For highlight
           marking.selectEdgeColor = Color(color);
-          // For hover
           marking.highlightEdgeColor = Color(color);
           renderer.highlightColor = Color(color);
         },
       });
     },
+
+    clearBarcodeSequence() {
+      plugin.managers.interactivity.lociSelects.deselectAll();
+      PluginCommands.Camera.Reset(plugin, {});
+    },
+
     handleResize() {
       plugin.layout.events.updated.next(null);
     },

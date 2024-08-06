@@ -8,14 +8,18 @@ import css from "rollup-plugin-css-only";
 export default {
   input: "src/index.ts",
   output: {
-    dir: "dist/bundle.js",
-    format: "esm"
+    dir: "dist",
+    format: "esm",
+    sourcemap: true,
   },
   plugins: [
     css(),
     nodeResolve(),
     commonjs(),
-    typescript(),
+    typescript({
+      tsconfig: './tsconfig.json',
+      outDir: 'dist',
+    }),
     json(),
     terser({
       ecma: 2020,

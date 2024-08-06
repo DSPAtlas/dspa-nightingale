@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nightingale Structure Example</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "@nightingale-elements/nightingale-structure": "./dist/bundle.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Import the component -->
+  <script type="module">
+    import "@nightingale-elements/nightingale-structure";
+    const barcodesequence = [
+      {pos: 2, color: "red"},
+      {pos: 3, color: "red"},
+      {pos: 4, color: "red"},
+      {pos: 5, color: "red"},
+      {pos: 6, color: "red"}
+  ]
+  </script>
+    
+    <nightingale-structure 
+        protein-accession="P05067" 
+        structure-id="AF-P05067-F1"
+        highlight-color="#FF6699"
+        barcode-sequence={barcodesequence}
+    ></nightingale-structure>
+
+    <script type="module">
+        console.log("xxx");
+    </script>
+</body>
+</html>
