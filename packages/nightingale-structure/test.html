@@ -16,20 +16,26 @@
   <!-- Import the component -->
   <script type="module">
     import "@nightingale-elements/nightingale-structure";
-    const barcodesequence = [
+    const bence = [
       {pos: 2, color: "red"},
       {pos: 3, color: "red"},
       {pos: 4, color: "red"},
       {pos: 5, color: "red"},
       {pos: 6, color: "red"}
   ]
+    const barcodesequence = [1,23,34,5,32,3,3]
+    const barcodeString = JSON.stringify(barcodesequence);
+
+        // Find the component and set the attribute
+    const structureElement = document.querySelector('nightingale-structure');
+    structureElement.setAttribute('lipscore-array', barcodesequence);
   </script>
     
     <nightingale-structure 
-        protein-accession="P05067" 
-        structure-id="AF-P05067-F1"
+        protein-accession="P25443" 
+        structure-id="AF-P25443-F1"
         highlight-color="#FF6699"
-        barcode-sequence={barcodesequence}
+        lipscore-array="xxxx"
     ></nightingale-structure>
 
     <script type="module">

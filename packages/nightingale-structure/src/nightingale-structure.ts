@@ -85,8 +85,8 @@ class NightingaleStructure extends withManager(
   @property({ type: String })
   "custom-download-url"?: string;
 
-  @property({ type: String })
-  "barcode-sequence"?: string;
+  @property({ type: Array })
+  "lipscore-array"?: Array<number>;
 
   @state()
   selectedMolecule?: {
@@ -186,9 +186,9 @@ class NightingaleStructure extends withManager(
       this.#structureViewer?.changeHighlightColor(parseInt(color, 16));
       this.#structureViewer?.handleResize();
     }
-    if (changedProperties.has("barcode-sequence")) {
-      this.applyBarcodeSequence();
-    }
+    if (changedProperties.has("lipscore-array")) {
+      this.#structureViewer?.addLiPScores([1,2,3,4]);
+   }
   }
 
   disconnectedCallback() {
@@ -330,47 +330,6 @@ class NightingaleStructure extends withManager(
       cancelable: true,
     });
     this.dispatchEvent(event);
-  }
-
-    
-  applyBarcodeSequence(): void {
-    if (!this["barcode-sequence"]) {
-      this.#structureViewer?.clearBarcodeSequence();
-      return;
-    }
-    let allPositions;
-    try {
-      allPositions = this.highlightedRegion.segments
-        .flatMap(({ start, end }) => {
-          if (this.isAF()) {
-            return {
-              start,
-              end,
-              chain: "A",
-            };
-          }
-          return translatePositions(
-            start,
-            end,
-            "UP_PDB",
-            this.selectedMolecule?.mappings,
-          );
-        })
-        .filter(Boolean);
-    } catch (error) {
-      if (error instanceof PositionMappingError) {
-        this.#structureViewer?.clearBarcodeSequence();
-        this.showMessage("Error", error.message);
-        return;
-      }
-      throw error;
-    }
-    if (!allPositions?.length) {
-      this.#structureViewer?.clearBarcodeSequence();
-      return;
-    }
-    this.#structureViewer?.applyBarcodeSequence(allPositions);
-    this.clearMessage();
   }
 
   highlightChain(): void {
