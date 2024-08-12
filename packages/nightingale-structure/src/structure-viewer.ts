@@ -13,7 +13,7 @@ import { Script } from "molstar/lib/mol-script/script";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { Color } from "molstar/lib/mol-util/color";
 
-import LiPConfidenceScore from "./lip-confidence/behavior";
+//import LiPConfidenceScore from "./lip-confidence/behavior";
 
 import { PresetStructureRepresentations, StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset';
 import { MAQualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
@@ -26,11 +26,6 @@ import { ObjectKeys } from 'molstar/lib/mol-util/type-helpers';
 const Extensions = {
   'ma-quality-assessment': PluginSpec.Behavior(MAQualityAssessment),
 };
-
-
-
-// ma_quality_assessment.data.value (plDDT)
-// add LiPScore
 
 const viewerOptions = {
   layoutIsExpanded: false,
@@ -72,7 +67,6 @@ const ViewerAutoPreset = StructureRepresentationPresetProvider({
       const structure = structureCell?.obj?.data;
       console.log('apply', structure)
       if (!structureCell || !structure) return {};
-
       if (!!structure.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'))) {
           console.log('yes', await QualityAssessmentPLDDTPreset.apply(ref, params, plugin))
           return await QualityAssessmentPLDDTPreset.apply(ref, params, plugin);
@@ -137,9 +131,9 @@ export const getStructureViewer = async (
 const plugin = new PluginContext(spec);
 await plugin.init();
 
-// FIXME can we register this here?
-// Here is how it's registered in molstar app: https://github.com/molstar/molstar/blob/v3.34.0/src/apps/viewer/app.ts#L193-L199
+console.log(plugin.builders.structure);
 plugin.builders.structure.representation.registerPreset(ViewerAutoPreset);
+
 
 const canvas = container.querySelector<HTMLCanvasElement>("canvas");
 
@@ -147,16 +141,11 @@ if (!canvas || !plugin.initViewer(canvas, container)) {
   throw new Error("Failed to init Mol*");
 }
 
-// const data = await plugin.builders.data.download({ url: '...' }, { state: { isGhost: true } });
-// const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
-// await plugin.builders.structure.hierarchy.applyPreset(trajectory, "default");
 
 plugin.behaviors.interaction.click.subscribe((event) => {
   if (StructureElement.Loci.is(event.current.loci)) {
     const loc = StructureElement.Location.create();
     StructureElement.Loci.getFirstLocation(event.current.loci, loc);
-    // auth_seq_id  : UniProt coordinate space
-    // label_seq_id : PDB coordinate space
     const sequencePosition = StructureProperties.residue.label_seq_id(loc);
     const chain = StructureProperties.chain.auth_asym_id(loc);
     onHighlightClick([{ position: sequencePosition, chain: chain }]);
@@ -188,27 +177,32 @@ const structureViewer: StructureViewer = {
       { state: { isGhost: true } }
     );
 
-    console.log("data")
-    console.log(data)
-
     const trajectory = await plugin.builders.structure.parseTrajectory(
       data,
       "mmcif"
     );
 
-    console.log("trajectory")
-    console.log(trajectory)
-
-    // add here LiPScore
 
     await plugin.builders.structure.hierarchy.applyPreset(
       trajectory,
       "all-models",
       { useDefaultIfSingleModel: true }
     );
-
-   // console.log("Calling addLiPScores...");
-   // this.addLiPScores([1,2,4,5,6]);
+   
+   this.addLiPScores([
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+    60, 60, 60, 60
+  ])  
   },
 
   highlight(ranges) {
@@ -267,38 +261,27 @@ const structureViewer: StructureViewer = {
   },
 
   addLiPScores(lipScoreArray: Array<number>) {
-   
     const structureData = plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
     if (!structureData) {
         console.error("No structure data found to apply LiP scores.");
         return;
     }
 
-    // Create a map for quick access to LiP scores by residue index
-    const lipScores = new Map<number, number>();
+    const lipScoresMap = new Map<number, number>();
     lipScoreArray.forEach((score, index) => {
-        lipScores.set(index + 1, score); // Assuming 1-based index for residues
+        lipScoresMap.set(index, score); 
     });
+    
+    // replace plddt with lipscore 
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.pLDDT = lipScoresMap;
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.pLDDT = lipScoresMap;
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.set('pLDDT', lipScoresMap);
+    
+    console.log("LiP scores applied and representation updated.")
 
-    // Access the first model in the structure (you may need to iterate over models if there are multiple)
-    const model = structureData.models[0];
-    const residues = model.atomicHierarchy.residues.label_seq_id;
-    
-    // Apply the LiP scores by modifying the model's custom properties or a specific property used for coloring
-    for (let i = 0; i < residues.rowCount; i++) {
-        const residueIndex = residues.value(i);
-        if (lipScores.has(residueIndex)) {
-            // Set the LiP score to the property you are using for visualization
-            const score = lipScores.get(residueIndex);
-            // Apply the score to some property in the model, for example:
-            // model.customProperties.lipScores[i] = score;
-            // Note: Modify this part according to how you intend to store or use the LiP scores.
-        }
-    }
-    
-    console.log("LiP scores applied and representation updated.");
       },
     };
 
+   
   return structureViewer;
 };
