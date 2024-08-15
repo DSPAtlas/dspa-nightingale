@@ -21,7 +21,7 @@ import { QualityAssessment } from 'molstar/lib/extensions/model-archive/quality-
 import { QualityAssessmentPLDDTPreset, QualityAssessmentQmeanPreset } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
 import { StateObjectRef } from 'molstar/lib/mol-state';
 import { ObjectKeys } from 'molstar/lib/mol-util/type-helpers';
-
+import { Structure } from 'molstar/lib/mol-model/structure/structure/structure';
 
 const Extensions = {
   'ma-quality-assessment': PluginSpec.Behavior(MAQualityAssessment),
@@ -47,6 +47,71 @@ const viewerOptions = {
   extensions: ObjectKeys(Extensions),
 };
 
+
+function addLiPScoresToStructure(structureData: Structure, lipScoreArray: Array<number>) {
+  const lipScoresMap = new Map<number, number>();
+    lipScoreArray.forEach((score, index) => {
+    lipScoresMap.set(index, score); 
+  });
+  
+  if (!structureData.models[0]._staticPropertyData.ma_quality_assessment) {
+    structureData.models[0]._staticPropertyData.ma_quality_assessment = {
+        data: {
+            value: {
+                pLDDT: undefined,
+                localMetrics: {
+                    pLDDT: undefined,
+                }
+            }
+        }
+    };
+} else if (!structureData.models[0]._staticPropertyData.ma_quality_assessment.data) {
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data = {
+        value: {
+            pLDDT: undefined,
+            localMetrics: {
+                pLDDT: undefined,
+            }
+        }
+    };
+} else if (!structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value) {
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value = {
+        pLDDT: undefined,
+        localMetrics: {
+            pLDDT: undefined,
+        }
+    };
+} else if (!structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics) {
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics = {
+        pLDDT: undefined,
+    };
+}
+
+  // Replace pLDDT with LiP scores
+  structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.pLDDT = lipScoresMap;
+  structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.pLDDT = lipScoresMap;
+  
+  return structureData;
+}
+
+const lipScoreArray = [
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+  60, 60, 60, 60
+];
+
+ 
+
+
 const ViewerAutoPreset = StructureRepresentationPresetProvider({
   id: 'preset-structure-representation-viewer-auto',
   display: {
@@ -54,8 +119,6 @@ const ViewerAutoPreset = StructureRepresentationPresetProvider({
       description: 'Show standard automatic representation but colored by quality assessment (if available in the model).'
   },
   isApplicable(a) {
-      // FIXME remove
-      console.log('isApplicable', a)
       return (
           !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT')) ||
           !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'qmean'))
@@ -65,14 +128,21 @@ const ViewerAutoPreset = StructureRepresentationPresetProvider({
   async apply(ref, params, plugin) {
       const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
       const structure = structureCell?.obj?.data;
-      console.log('apply', structure)
+      
       if (!structureCell || !structure) return {};
-      if (!!structure.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'))) {
-          console.log('yes', await QualityAssessmentPLDDTPreset.apply(ref, params, plugin))
+    
+      // Apply LiP scores
+      const structuremodified = addLiPScoresToStructure(structure, lipScoreArray);
+
+      // Apply the quality assessment presets or the default representation preset
+      if (structuremodified.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'))) {
+          console.log('Applying pLDDT preset');
           return await QualityAssessmentPLDDTPreset.apply(ref, params, plugin);
-      } else if (!!structure.models.some(m => QualityAssessment.isApplicable(m, 'qmean'))) {
+      } else if (structuremodified.models.some(m => QualityAssessment.isApplicable(m, 'qmean'))) {
+          console.log('Applying Qmean preset');
           return await QualityAssessmentQmeanPreset.apply(ref, params, plugin);
       } else {
+          console.log('Applying default auto preset');
           return await PresetStructureRepresentations.auto.apply(ref, params, plugin);
       }
   }
@@ -177,32 +247,35 @@ const structureViewer: StructureViewer = {
       { state: { isGhost: true } }
     );
 
+    console.log("data", data);
+
     const trajectory = await plugin.builders.structure.parseTrajectory(
       data,
       "mmcif"
     );
 
-
+    
     await plugin.builders.structure.hierarchy.applyPreset(
       trajectory,
       "all-models",
       { useDefaultIfSingleModel: true }
     );
+
+    this.addLiPScores([
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60
+    ])  
    
-   this.addLiPScores([
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-    60, 60, 60, 60
-  ])  
   },
 
   highlight(ranges) {
