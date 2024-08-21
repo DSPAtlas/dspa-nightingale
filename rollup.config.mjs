@@ -27,5 +27,5 @@ export default {
       warnings: true,
     }),
   ],
-  external: (id) => /@nightingale-elements/.test(id),
+  external: (id) => /@dspa-nightingale-elements/.test(id),
 };
