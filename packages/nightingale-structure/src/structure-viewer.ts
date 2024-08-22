@@ -109,8 +109,6 @@ const lipScoreArray = [
   60, 60, 60, 60
 ];
 
- 
-
 
 const ViewerAutoPreset = StructureRepresentationPresetProvider({
   id: 'preset-structure-representation-viewer-auto',

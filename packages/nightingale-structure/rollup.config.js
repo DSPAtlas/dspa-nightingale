@@ -6,7 +6,7 @@ import replace from '@rollup/plugin-replace';
 export default {
   input: 'src/index.ts',
   output: {
-    file: 'dist/bundle.js',
+    file: 'dist/index.js',
     format: 'esm',
   },
   plugins: [

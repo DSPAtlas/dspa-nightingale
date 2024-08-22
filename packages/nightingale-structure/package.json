@@ -1,9 +1,8 @@
 {
-  "name": "@dspa-nightingale-elements/nightingale-structure",
+  "name": "@dspa-nightingale/nightingale-structure",
   "description": "Nightingale Structure",
   "files": [
     "dist",
-    "src/af-confidence",
     "src"
   ],
   "main": "dist/index.js",
