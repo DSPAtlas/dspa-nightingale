@@ -7,7 +7,7 @@
   <script type="importmap">
     {
       "imports": {
-        "@nightingale-elements/nightingale-structure": "./dist/bundle.js"
+        "@nightingale-elements/nightingale-structure": "./dist/index.js"
       }
     }
   </script>
@@ -26,8 +26,28 @@
     const barcodesequence = [1,23,34,5,32,3,3]
     const barcodeString = JSON.stringify(barcodesequence);
 
+    const lipScoreArray = [
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
+      60, 60, 60, 60
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+            // Find the component and set the attribute
+            const structureElement = document.querySelector('nightingale-structure');
+            structureElement.setAttribute('lipscore-array', JSON.stringify(lipScoreArray));
+        });
         // Find the component and set the attribute
-    const structureElement = document.querySelector('nightingale-structure');
+    //const structureElement = document.querySelector('nightingale-structure');
     //structureElement.setAttribute('lipscore-array', barcodesequence);
   </script>
     
@@ -35,7 +55,7 @@
         protein-accession="P25443" 
         structure-id="AF-P25443-F1"
         highlight-color="#FF6699"
-        lipscore-array="xxxx"
+        lipscore-array={lipScoreArray}
     ></nightingale-structure>
 
     <script type="module">

@@ -85,8 +85,8 @@ class NightingaleStructure extends withManager(
   @property({ type: String })
   "custom-download-url"?: string;
 
-  @property({ type: Array })
-  "lipscore-array"?: Array<number>;
+  @property({ type: Array})
+  "lipscore-array": Array<number>;
 
   @state()
   selectedMolecule?: {
@@ -161,7 +161,9 @@ class NightingaleStructure extends withManager(
     const structureViewerDiv =
       this.renderRoot.querySelector<HTMLDivElement>("#molstar-parent");
     if (structureViewerDiv) {
-      getStructureViewer(structureViewerDiv, this.updateHighlight).then(
+      // TODO fix fetching of lipscore array
+      const lipScoreArray = this["lipscore-array"];
+      getStructureViewer(structureViewerDiv, this.updateHighlight, lipScoreArray).then(
         (structureViewer) => {
           this.#structureViewer = structureViewer;
           const color = this["highlight-color"].substring(1, 7);
@@ -186,9 +188,6 @@ class NightingaleStructure extends withManager(
       this.#structureViewer?.changeHighlightColor(parseInt(color, 16));
       this.#structureViewer?.handleResize();
     }
-    if (changedProperties.has("lipscore-array")) {
-      this.#structureViewer?.addLiPScores([1,2,3,4]);
-   }
   }
 
   disconnectedCallback() {
@@ -226,6 +225,7 @@ class NightingaleStructure extends withManager(
     if (!this["structure-id"] || !this["protein-accession"]) {
       return;
     }
+    const lipscoreArray = this["lipscore-array"];
     let mappings;
     if (this.isAF()) {
       const afPredictions = await this.loadAFEntry(this["protein-accession"]);
@@ -233,7 +233,8 @@ class NightingaleStructure extends withManager(
         (prediction) => prediction.entryId === this["structure-id"],
       );
       if (afInfo?.cifUrl) {
-        await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, false);
+       
+        await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, lipscoreArray, false);
         this.clearMessage();
       }
     } else {
@@ -244,7 +245,7 @@ class NightingaleStructure extends withManager(
         await this.#structureViewer?.loadCifUrl(
           `${this["custom-download-url"]}${this[
             "structure-id"
-          ].toLowerCase()}.cif`,
+          ].toLowerCase()}.cif`, []
         );
         this.clearMessage();
       } else {

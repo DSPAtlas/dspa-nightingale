@@ -13,8 +13,6 @@ import { Script } from "molstar/lib/mol-script/script";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { Color } from "molstar/lib/mol-util/color";
 
-//import LiPConfidenceScore from "./lip-confidence/behavior";
-
 import { PresetStructureRepresentations, StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset';
 import { MAQualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
 import { QualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/prop';
@@ -22,6 +20,21 @@ import { QualityAssessmentPLDDTPreset, QualityAssessmentQmeanPreset } from 'mols
 import { StateObjectRef } from 'molstar/lib/mol-state';
 import { ObjectKeys } from 'molstar/lib/mol-util/type-helpers';
 import { Structure } from 'molstar/lib/mol-model/structure/structure/structure';
+
+interface CustomPluginState {
+  lipScoreArray: Array<number>;
+}
+
+class CustomPluginContext extends PluginContext {
+  customState: CustomPluginState;
+
+  constructor(spec: any) {
+    super(spec);
+    this.customState = {
+      lipScoreArray: [],
+    };
+  }
+}
 
 const Extensions = {
   'ma-quality-assessment': PluginSpec.Behavior(MAQualityAssessment),
@@ -49,6 +62,10 @@ const viewerOptions = {
 
 
 function addLiPScoresToStructure(structureData: Structure, lipScoreArray: Array<number>) {
+  if (!lipScoreArray) {
+      console.error('lipScoreArray is null or undefined. Skipping LiP scores application.');
+      return structureData;
+  }
   const lipScoresMap = new Map<number, number>();
     lipScoreArray.forEach((score, index) => {
     lipScoresMap.set(index, score); 
@@ -94,21 +111,6 @@ function addLiPScoresToStructure(structureData: Structure, lipScoreArray: Array<
   return structureData;
 }
 
-const lipScoreArray = [
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-  60, 60, 60, 60
-];
-
 
 const ViewerAutoPreset = StructureRepresentationPresetProvider({
   id: 'preset-structure-representation-viewer-auto',
@@ -123,14 +125,16 @@ const ViewerAutoPreset = StructureRepresentationPresetProvider({
       );
   },
   params: () => StructureRepresentationPresetProvider.CommonParams,
-  async apply(ref, params, plugin) {
+  async apply(ref, params, plugin: CustomPluginContext) {
       const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
       const structure = structureCell?.obj?.data;
       
       if (!structureCell || !structure) return {};
     
       // Apply LiP scores
-      const structuremodified = addLiPScoresToStructure(structure, lipScoreArray);
+      const lipScoreArray =  plugin.customState.lipScoreArray;
+      const structuremodified = addLiPScoresToStructure(structure,lipScoreArray);
+
 
       // Apply the quality assessment presets or the default representation preset
       if (structuremodified.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'))) {
@@ -181,10 +185,10 @@ type SequencePosition = { chain: string; position: number };
 type Range = { chain: string; start: number; end: number };
 
 export type StructureViewer = {
-  plugin: PluginContext;
+  plugin: CustomPluginContext;
   //lipscoreList
   loadPdb(pdb: string): Promise<void>;
-  loadCifUrl(url: string, isBinary?: boolean): Promise<void>;
+  loadCifUrl(url: string, lipScoreArray: Array<number>, isBinary?: boolean): Promise<void>;
   highlight(ranges: Range[]): void;
   clearHighlight(): void;
   changeHighlightColor(color: number): void;
@@ -194,20 +198,22 @@ export type StructureViewer = {
 
 export const getStructureViewer = async (
   container: HTMLDivElement,
-  onHighlightClick: (sequencePositions: SequencePosition[]) => void
+  onHighlightClick: (sequencePositions: SequencePosition[]) => void,
+  lipScoreArray: Array<number> // Add this parameter
 ): Promise<StructureViewer> => {
-const plugin = new PluginContext(spec);
-await plugin.init();
+  const plugin = new CustomPluginContext(spec);
+  await plugin.init();
 
-console.log(plugin.builders.structure);
-plugin.builders.structure.representation.registerPreset(ViewerAutoPreset);
+  plugin.customState.lipScoreArray = lipScoreArray;
 
+  console.log(plugin.builders.structure);
+  plugin.builders.structure.representation.registerPreset(ViewerAutoPreset);
 
-const canvas = container.querySelector<HTMLCanvasElement>("canvas");
-
-if (!canvas || !plugin.initViewer(canvas, container)) {
-  throw new Error("Failed to init Mol*");
+  const canvas = container.querySelector<HTMLCanvasElement>("canvas");
+  if (!canvas || !plugin.initViewer(canvas, container)) {
+    throw new Error("Failed to init Mol*");
 }
+
 
 
 plugin.behaviors.interaction.click.subscribe((event) => {
@@ -236,10 +242,11 @@ const structureViewer: StructureViewer = {
   async loadPdb(pdb) {
     await this.loadCifUrl(
       `https://www.ebi.ac.uk/pdbe/model-server/v1/${pdb.toLowerCase()}/full?encoding=bcif`,
+      [],
       true
     );
   },
-  async loadCifUrl(url, isBinary = false): Promise<void> {
+  async loadCifUrl(url:string, lipScoreArray:Array<number> = [], isBinary:boolean = false): Promise<void> {
     const data = await plugin.builders.data.download(
       { url, isBinary },
       { state: { isGhost: true } }
@@ -259,20 +266,9 @@ const structureViewer: StructureViewer = {
       { useDefaultIfSingleModel: true }
     );
 
-    this.addLiPScores([
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60
-    ])  
+    plugin.customState.lipScoreArray = lipScoreArray;
+
+    this.addLiPScores(lipScoreArray);  
    
   },
 
