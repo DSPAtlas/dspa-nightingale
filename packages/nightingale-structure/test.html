@@ -27,35 +27,27 @@
     const barcodeString = JSON.stringify(barcodesequence);
 
     const lipScoreArray = [
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 
-      60, 60, 60, 60
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+      100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100
+
     ];
 
-    document.addEventListener('DOMContentLoaded', () => {
-            // Find the component and set the attribute
-            const structureElement = document.querySelector('nightingale-structure');
-            structureElement.setAttribute('lipscore-array', JSON.stringify(lipScoreArray));
-        });
-        // Find the component and set the attribute
-    //const structureElement = document.querySelector('nightingale-structure');
-    //structureElement.setAttribute('lipscore-array', barcodesequence);
+    const lipScoreString = JSON.stringify(lipScoreArray);
+
+
+    //  lipscore-array="[100, 100, 100, 100, 100, 100, 100, 100, 100, 100,  100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]" 
   </script>
-    
     <nightingale-structure 
         protein-accession="P25443" 
         structure-id="AF-P25443-F1"
         highlight-color="#FF6699"
-        lipscore-array={lipScoreArray}
+        .lipscore-array=${lipScoreString}
     ></nightingale-structure>
 
     <script type="module">

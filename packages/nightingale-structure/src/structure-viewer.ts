@@ -62,6 +62,7 @@ const viewerOptions = {
 
 
 function addLiPScoresToStructure(structureData: Structure, lipScoreArray: Array<number>) {
+  console.log("lipscores");
   if (!lipScoreArray) {
       console.error('lipScoreArray is null or undefined. Skipping LiP scores application.');
       return structureData;

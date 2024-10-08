@@ -48,3 +48,5 @@ appended to it, including `.cif` suffix.
 
 The optional height of the 3D structure. By default the value is set to `480px`.
 This should be a valid CSS value for an element's height property.
+
+run yarn vbui

@@ -76,6 +76,7 @@ const alphaFoldMappingUrl = "https://alphafold.ebi.ac.uk/api/prediction/";
 class NightingaleStructure extends withManager(
   withHighlight(NightingaleElement),
 ) {
+
   @property({ type: String })
   "protein-accession"?: string;
 
@@ -86,7 +87,7 @@ class NightingaleStructure extends withManager(
   "custom-download-url"?: string;
 
   @property({ type: Array})
-  "lipscore-array": Array<number>;
+   "lipscore-array": Array<number>;
 
   @state()
   selectedMolecule?: {
@@ -157,19 +158,27 @@ class NightingaleStructure extends withManager(
       </div>`;
   }
 
+  
   protected firstUpdated() {
-    const structureViewerDiv =
-      this.renderRoot.querySelector<HTMLDivElement>("#molstar-parent");
+    const structureViewerDiv = this.renderRoot.querySelector<HTMLDivElement>("#molstar-parent");
+    
     if (structureViewerDiv) {
-      // TODO fix fetching of lipscore array
-      const lipScoreArray = this["lipscore-array"];
+      console.log('Structure Viewer container found:', structureViewerDiv);
+  
+      const lipScoreArray = this["lipscore-array"]; //this.lipscoreArray || [];
+      console.log('LipScore Array:', lipScoreArray);
+  
       getStructureViewer(structureViewerDiv, this.updateHighlight, lipScoreArray).then(
         (structureViewer) => {
           this.#structureViewer = structureViewer;
-          const color = this["highlight-color"].substring(1, 7);
+          const color = this["highlight-color"]?.substring(1, 7) || "FF6699";
           this.#structureViewer.changeHighlightColor(parseInt(color, 16));
-        },
-      );
+        })
+        .catch((error) => {
+          console.error('Error initializing structure viewer:', error);
+        });
+    } else {
+      console.error('#molstar-parent not found');
     }
   }
 
@@ -223,9 +232,13 @@ class NightingaleStructure extends withManager(
 
   async selectMolecule(): Promise<void> {
     if (!this["structure-id"] || !this["protein-accession"]) {
+      console.error('Missing structure-id or protein-accession');
       return;
     }
-    const lipscoreArray = this["lipscore-array"];
+    
+    const lipscoreArray = this["lipscore-array"]; 
+    console.log("lip array load", lipscoreArray);
+
     let mappings;
     if (this.isAF()) {
       const afPredictions = await this.loadAFEntry(this["protein-accession"]);
@@ -233,7 +246,7 @@ class NightingaleStructure extends withManager(
         (prediction) => prediction.entryId === this["structure-id"],
       );
       if (afInfo?.cifUrl) {
-       
+        console.log(afInfo.cifUrl);
         await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, lipscoreArray, false);
         this.clearMessage();
       }
@@ -241,13 +254,11 @@ class NightingaleStructure extends withManager(
       const pdbEntry = await this.loadPDBEntry(this["structure-id"]);
       mappings =
         Object.values(pdbEntry)[0].UniProt[this["protein-accession"]]?.mappings;
-      if (this["custom-download-url"]) {
-        await this.#structureViewer?.loadCifUrl(
-          `${this["custom-download-url"]}${this[
-            "structure-id"
-          ].toLowerCase()}.cif`, []
-        );
-        this.clearMessage();
+        if (this["custom-download-url"]) {
+          await this.#structureViewer?.loadCifUrl(
+            `${this["custom-download-url"]}${this["structure-id"].toLowerCase()}.cif`, lipscoreArray
+          );
+          this.clearMessage();
       } else {
         await this.#structureViewer?.loadPdb(
           this["structure-id"].toLowerCase(),
