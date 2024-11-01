@@ -236,6 +236,7 @@ class NightingaleTrack extends withManager(
     this.svg?.selectAll("g").remove();
 
     this.svg = select(this as unknown as NightingaleElement)
+      //.append("svg")
       .selectAll<SVGSVGElement, unknown>("svg")
       .attr("width", this.width)
       .attr("height", this.height);
@@ -301,12 +302,30 @@ class NightingaleTrack extends withManager(
       )
       .style("fill", (f) => this.getFeatureFillColor(f))
       .attr("stroke", (f) => this.getFeatureColor(f))
-      .style("fill-opacity", ({ feature }) =>
-        feature.opacity ? feature.opacity : 0.9,
-      )
-      .style("stroke-opacity", ({ feature }) =>
-        feature.opacity ? feature.opacity : 0.9,
-      );
+      .style("fill-opacity", ({ feature }) => (feature.opacity ? feature.opacity : 0.9))
+      .style("stroke-opacity", ({ feature }) => (feature.opacity ? feature.opacity : 0.9))
+      .on("mouseover", (event, f) => {
+        const tooltip = document.getElementById("tooltip");
+        if (tooltip) {
+          tooltip.innerHTML = `<strong>XXXXX</strong><br>Type: sssssss`;
+          tooltip.style.visibility = "visible";
+        }
+      })
+      .on("mousemove", (event) => {
+        const tooltip = document.getElementById("tooltip");
+        if (tooltip) {
+          tooltip.style.top = `${event.pageY + 10}px`;
+          tooltip.style.left = `${event.pageX + 10}px`;
+        }
+      })
+      .on("mouseleave", () => {
+        const tooltip = document.getElementById("tooltip");
+        if (tooltip) {
+          tooltip.style.visibility = "hidden";
+        }
+      });
+      
+    
 
     fragmentGroup
       .append("rect")
@@ -447,7 +466,23 @@ class NightingaleTrack extends withManager(
   }
 
   render() {
-    return html`<svg class="container"></svg>`;
+    return html`
+    <style>
+      .tooltip {
+        position: absolute;
+        visibility: hidden;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        border-radius: 4px;
+        padding: 5px;
+        pointer-events: none;
+        font-size: 12px;
+        z-index: 10;
+      }
+    </style>
+    <svg class="container"></svg>
+    <div id="tooltip" class="tooltip"></div>
+  `;
   }
 }
 

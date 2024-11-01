@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nightingale Track Example</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "@nightingale-elements/nightingale-track": "./dist/index.js"
+      }
+    }
+  </script>
+  <style>
+    /* Tooltip styling */
+    .tooltip {
+        position: absolute;
+        visibility: hidden;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        border-radius: 4px;
+        padding: 5px;
+        font-size: 12px;
+        z-index: 10;
+    }
+</style>
+</head>
+<body>
+    <div id="tooltip" class="tooltip"></div>
+  <!-- Import the component -->
+  <script type="module">
+    import "@nightingale-elements/nightingale-track";
+    
+    const accession = "P05067";
+    
+    // Load feature and variation data from Proteins API
+    const featuresData = await (
+        await fetch("https://www.ebi.ac.uk/proteins/api/features/" + accession)
+    ).json();
+    
+    customElements.whenDefined("nightingale-track").then(() => {
+        const tooltip = document.getElementById("tooltip");
+        if (!tooltip) {
+            console.error("Tooltip element not found!");
+            return;
+        }
+
+        const features = featuresData.features.map((ft) => ({
+            ...ft,
+            start: ft.start || ft.begin,
+            tooltipContent: ft.description || "No description available",
+        }));
+
+        const updateTooltip = (content, x, y) => {
+            tooltip.innerHTML = content;
+            tooltip.style.top = `${y + 10}px`;
+            tooltip.style.left = `${x + 10}px`;
+            tooltip.style.visibility = "visible";
+        };
+
+        const hideTooltip = () => {
+            tooltip.style.visibility = "hidden";
+        };
+
+        // Define track types and corresponding IDs
+        const trackIds = [
+            { id: "domain", type: "DOMAIN" },
+            { id: "region", type: "REGION" },
+            { id: "site", type: "SITE" },
+            { id: "binding", type: "BINDING" },
+            { id: "chain", type: "CHAIN" },
+            { id: "disulfide-bond", type: "DISULFID" },
+            { id: "beta-strand", type: "STRAND" }
+        ];
+
+        trackIds.forEach(({ id, type }) => {
+                const trackElement = document.querySelector(`#${id}`);
+                const trackFeatures = features.filter(({ type: featureType }) => featureType === type);
+
+                trackElement.data = trackFeatures;
+
+                trackElement.addEventListener("mousemove", (event) => {
+                    // Calculate approximate position
+                    const trackLength = trackElement.getAttribute("length");
+                    const relativeX = event.offsetX / trackElement.clientWidth;
+                    const position = Math.floor(relativeX * trackLength);
+
+                    // Find the closest feature to this position
+                    const feature = trackFeatures.find(f => f.start <= position && f.end >= position);
+                    if (feature) {
+                        updateTooltip(feature.tooltipContent, event.pageX, event.pageY);
+                    }
+                });
+
+                trackElement.addEventListener("mouseleave", hideTooltip);
+            });
+        });
+
+</script>
+    <table>
+        <tbody>
+        <tr>
+            <td>Domain</td>
+            <td>
+            <nightingale-track
+                id="domain"
+                min-width="800"
+                height="15"
+                length="770"
+                display-start="1"
+                display-end="770"
+                margin-color="aliceblue"
+                highlight-event="onmouseover"
+            ></nightingale-track>
+            </td>
+        </tr>
+        <tr>
+            <td>Region</td>
+            <td>
+            <nightingale-track
+                id="region"
+                min-width="800"
+                height="15"
+                length="770"
+                display-start="1"
+                display-end="770"
+                margin-color="aliceblue"
+                highlight-event="onmouseover"
+            ></nightingale-track>
+            </td>
+        </tr>
+        <tr>
+            <td>Site</td>
+            <td>
+            <nightingale-track
+                id="site"
+                min-width="800"
+                height="15"
+                length="770"
+                display-start="1"
+                display-end="770"
+                margin-color="aliceblue"
+                highlight-event="onmouseover"
+            ></nightingale-track>
+            </td>
+        </tr>
+        <tr>
+            <td>Chain</td>
+            <td>
+            <nightingale-track
+                id="chain"
+                layout="non-overlapping"
+                min-width="800"
+                height="15"
+                length="770"
+                display-start="1"
+                display-end="770"
+                margin-color="aliceblue"
+                highlight-event="onmouseover"
+            ></nightingale-track>
+            </td>
+        </tr>
+        <tr>
+            <td>Binding site</td>
+            <td>
+            <nightingale-track
+                id="binding"
+                min-width="800"
+                height="15"
+                length="770"
+                display-start="1"
+                display-end="770"
+                margin-color="aliceblue"
+                highlight-event="onmouseover"
+            ></nightingale-track>
+            </td>
+        </tr>
+        <tr>
+            <td>Disulfide bond</td>
+            <td>
+            <nightingale-track
+                id="disulfide-bond"
+                layout="non-overlapping"
+                min-width="800"
+                height="15"
+                length="770"
+                display-start="1"
+                display-end="770"
+                margin-color="aliceblue"
+                highlight-event="onmouseover"
+            ></nightingale-track>
+            </td>
+        </tr>
+        <tr>
+            <td>Beta strand</td>
+            <td>
+            <nightingale-track
+                id="beta-strand"
+                min-width="800"
+                height="15"
+                length="770"
+                display-start="1"
+                display-end="770"
+                margin-color="aliceblue"
+                highlight-event="onmouseover"
+            ></nightingale-track>
+            </td>
+        </tr>
+        </tbody>
+    </table>
