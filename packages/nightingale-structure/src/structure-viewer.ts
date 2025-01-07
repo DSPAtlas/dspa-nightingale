@@ -251,7 +251,7 @@ plugin.behaviors.interaction.click.subscribe((event) => {
 
 PluginCommands.Canvas3D.SetSettings(plugin, {
   settings: ({ renderer, marking }) => {
-    renderer.backgroundColor = Color(0xeeeeee);
+    renderer.backgroundColor = Color(0xffffff);
     // For highlight
     marking.edgeScale = 1.5;
     renderer.selectStrength = 0;
