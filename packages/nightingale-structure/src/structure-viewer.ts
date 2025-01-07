@@ -16,10 +16,12 @@ import { Color } from "molstar/lib/mol-util/color";
 import { PresetStructureRepresentations, StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset';
 import { MAQualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
 import { QualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/prop';
-import { QualityAssessmentPLDDTPreset, QualityAssessmentQmeanPreset } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
+import { QualityAssessmentQmeanPreset } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
 import { StateObjectRef } from 'molstar/lib/mol-state';
 import { ObjectKeys } from 'molstar/lib/mol-util/type-helpers';
 import { Structure } from 'molstar/lib/mol-model/structure/structure/structure';
+
+import {LIPColorThemeProvider} from './color';
 
 interface CustomPluginState {
   lipScoreArray: Array<number>;
@@ -35,6 +37,27 @@ class CustomPluginContext extends PluginContext {
     };
   }
 }
+
+export const QualityAssessmentLIPPreset = StructureRepresentationPresetProvider({
+  id: 'preset-structure-representation-ma-quality-assessment-plddt',
+  display: {
+      name: 'LIP Score', group: 'Annotation',
+      description: 'Color structure based on LIP Score.'
+  },
+  isApplicable(a) {
+      return !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'));
+  },
+  params: () => StructureRepresentationPresetProvider.CommonParams,
+  async apply(ref, params, plugin) {
+      const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
+      const structure = structureCell?.obj?.data;
+      if (!structureCell || !structure) return {};
+
+      const colorTheme = LIPColorThemeProvider.name as any;
+      return await PresetStructureRepresentations.auto.apply(ref, { ...params, theme: { globalName: colorTheme, focus: { name: colorTheme } } }, plugin);
+  }
+});
+
 
 const Extensions = {
   'ma-quality-assessment': PluginSpec.Behavior(MAQualityAssessment),
@@ -62,7 +85,6 @@ const viewerOptions = {
 
 
 function addLiPScoresToStructure(structureData: Structure, lipScoreArray: Array<number>) {
-  console.log("lipscores");
   if (!lipScoreArray) {
       console.error('lipScoreArray is null or undefined. Skipping LiP scores application.');
       return structureData;
@@ -140,7 +162,7 @@ const ViewerAutoPreset = StructureRepresentationPresetProvider({
       // Apply the quality assessment presets or the default representation preset
       if (structuremodified.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'))) {
           console.log('Applying pLDDT preset');
-          return await QualityAssessmentPLDDTPreset.apply(ref, params, plugin);
+          return await QualityAssessmentLIPPreset.apply(ref, params, plugin);
       } else if (structuremodified.models.some(m => QualityAssessment.isApplicable(m, 'qmean'))) {
           console.log('Applying Qmean preset');
           return await QualityAssessmentQmeanPreset.apply(ref, params, plugin);
