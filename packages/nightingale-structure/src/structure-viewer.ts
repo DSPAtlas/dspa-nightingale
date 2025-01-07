@@ -16,7 +16,7 @@ import { Color } from "molstar/lib/mol-util/color";
 import { PresetStructureRepresentations, StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset';
 import { MAQualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
 import { QualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/prop';
-import { QualityAssessmentQmeanPreset } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
+//import { QualityAssessmentQmeanPreset } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
 import { StateObjectRef } from 'molstar/lib/mol-state';
 import { ObjectKeys } from 'molstar/lib/mol-util/type-helpers';
 import { Structure } from 'molstar/lib/mol-model/structure/structure/structure';
@@ -24,7 +24,7 @@ import { Structure } from 'molstar/lib/mol-model/structure/structure/structure';
 import {LIPColorThemeProvider} from './color';
 
 interface CustomPluginState {
-  lipScoreArray: Array<number>;
+  lipscoreArray: Array<number>;
 }
 
 class CustomPluginContext extends PluginContext {
@@ -33,19 +33,19 @@ class CustomPluginContext extends PluginContext {
   constructor(spec: any) {
     super(spec);
     this.customState = {
-      lipScoreArray: [],
+      lipscoreArray: [],
     };
   }
 }
 
 export const QualityAssessmentLIPPreset = StructureRepresentationPresetProvider({
-  id: 'preset-structure-representation-ma-quality-assessment-plddt',
+  id: 'preset-structure-representation-ma-quality-assessment-lipScore',
   display: {
-      name: 'LIP Score', group: 'Annotation',
+      name: 'lipScore', group: 'Annotation',
       description: 'Color structure based on LIP Score.'
   },
   isApplicable(a) {
-      return !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'));
+      return true;
   },
   params: () => StructureRepresentationPresetProvider.CommonParams,
   async apply(ref, params, plugin) {
@@ -54,7 +54,8 @@ export const QualityAssessmentLIPPreset = StructureRepresentationPresetProvider(
       if (!structureCell || !structure) return {};
 
       const colorTheme = LIPColorThemeProvider.name as any;
-      return await PresetStructureRepresentations.auto.apply(ref, { ...params, theme: { globalName: colorTheme, focus: { name: colorTheme } } }, plugin);
+      return await PresetStructureRepresentations.auto.apply(ref, { ...params, theme: { 
+        globalName: colorTheme, focus: { name: colorTheme } } }, plugin);
   }
 });
 
@@ -84,55 +85,58 @@ const viewerOptions = {
 };
 
 
-function addLiPScoresToStructure(structureData: Structure, lipScoreArray: Array<number>) {
-  if (!lipScoreArray) {
-      console.error('lipScoreArray is null or undefined. Skipping LiP scores application.');
+
+function addLiPScoresToStructure(structureData: Structure, lipscoreArray: Array<number>): Structure {
+  if (!lipscoreArray || lipscoreArray.length === 0) {
+      console.error('lipScoreArray is null or empty. Skipping LiP scores application.');
       return structureData;
   }
-  const lipScoresMap = new Map<number, number>();
-    lipScoreArray.forEach((score, index) => {
-    lipScoresMap.set(index, score); 
-  });
-  
-  if (!structureData.models[0]._staticPropertyData.ma_quality_assessment) {
-    structureData.models[0]._staticPropertyData.ma_quality_assessment = {
-        data: {
-            value: {
-                pLDDT: undefined,
-                localMetrics: {
-                    pLDDT: undefined,
-                }
-            }
-        }
-    };
-} else if (!structureData.models[0]._staticPropertyData.ma_quality_assessment.data) {
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data = {
-        value: {
-            pLDDT: undefined,
-            localMetrics: {
-                pLDDT: undefined,
-            }
-        }
-    };
-} else if (!structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value) {
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value = {
-        pLDDT: undefined,
-        localMetrics: {
-            pLDDT: undefined,
-        }
-    };
-} else if (!structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics) {
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics = {
-        pLDDT: undefined,
-    };
-}
 
-  // Replace pLDDT with LiP scores
-  structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.pLDDT = lipScoresMap;
-  structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.pLDDT = lipScoresMap;
-  
+  const lipScoresMap = new Map<number, number>();
+  lipscoreArray.forEach((score, index) => {
+      lipScoresMap.set(index, score); 
+  });
+
+  const modelData = structureData.models[0]._staticPropertyData;
+
+  // Ensure `ma_quality_assessment` and its nested properties are initialized
+  if (!modelData.ma_quality_assessment) {
+      modelData.ma_quality_assessment = {
+          data: {
+              value: {
+                  lipScore: undefined,
+                  localMetrics: undefined,
+              },
+          },
+      };
+  } else if (!modelData.ma_quality_assessment.data) {
+      modelData.ma_quality_assessment.data = {
+          value: {
+              lipScore: undefined,
+              localMetrics: undefined,
+          },
+      };
+  } else if (!modelData.ma_quality_assessment.data.value) {
+      modelData.ma_quality_assessment.data.value = {
+          lipScore: undefined,
+          localMetrics: undefined,
+      };
+  } else if (!modelData.ma_quality_assessment.data.value.localMetrics) {
+      // Initialize `localMetrics` as a Map
+      modelData.ma_quality_assessment.data.value.localMetrics = new Map<number, number>();
+  }
+
+  // Assign the LiP scores map
+  modelData.ma_quality_assessment.data.value.lipScore = lipScoresMap;
+  modelData.ma_quality_assessment.data.value.localMetrics = lipScoresMap;
+
+  console.log('LiP scores successfully added to structure data.');
+  console.log('Updated structure data:', JSON.stringify(modelData, null, 2));
+
   return structureData;
 }
+
+
 
 
 const ViewerAutoPreset = StructureRepresentationPresetProvider({
@@ -149,28 +153,32 @@ const ViewerAutoPreset = StructureRepresentationPresetProvider({
   },
   params: () => StructureRepresentationPresetProvider.CommonParams,
   async apply(ref, params, plugin: CustomPluginContext) {
-      const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
-      const structure = structureCell?.obj?.data;
-      
-      if (!structureCell || !structure) return {};
-    
-      // Apply LiP scores
-      const lipScoreArray =  plugin.customState.lipScoreArray;
-      const structuremodified = addLiPScoresToStructure(structure,lipScoreArray);
+    const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
+    const structure = structureCell?.obj?.data;
 
+    if (!structureCell || !structure) return {};
 
-      // Apply the quality assessment presets or the default representation preset
-      if (structuremodified.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT'))) {
-          console.log('Applying pLDDT preset');
-          return await QualityAssessmentLIPPreset.apply(ref, params, plugin);
-      } else if (structuremodified.models.some(m => QualityAssessment.isApplicable(m, 'qmean'))) {
-          console.log('Applying Qmean preset');
-          return await QualityAssessmentQmeanPreset.apply(ref, params, plugin);
-      } else {
-          console.log('Applying default auto preset');
-          return await PresetStructureRepresentations.auto.apply(ref, params, plugin);
-      }
-  }
+    const lipscoreArray = plugin.customState.lipscoreArray;
+
+    // Apply LiP scores
+    if (lipscoreArray && lipscoreArray.length > 0) {
+        console.log('Applying LiP scores...');
+        addLiPScoresToStructure(structure, lipscoreArray);
+    } else {
+        console.warn('No LiP scores provided. Skipping application.');
+    }
+
+    // Apply the quality assessment presets or the default representation preset
+    if (lipscoreArray && lipscoreArray.length > 0) {
+        console.log('Applying LiP Score Preset...', structure);
+        console.log('rtest');
+        return await QualityAssessmentLIPPreset.apply(ref, params, plugin);
+    } else {
+        console.log('Applying default auto preset');
+        return await PresetStructureRepresentations.auto.apply(ref, params, plugin);
+    }
+}
+
 });
 
 const defaultSpec = DefaultPluginSpec(); // TODO: Make our own to select only essential plugins
@@ -211,23 +219,23 @@ export type StructureViewer = {
   plugin: CustomPluginContext;
   //lipscoreList
   loadPdb(pdb: string): Promise<void>;
-  loadCifUrl(url: string, lipScoreArray: Array<number>, isBinary?: boolean): Promise<void>;
+  loadCifUrl(url: string, lipscoreArray: Array<number>, isBinary?: boolean): Promise<void>;
   highlight(ranges: Range[]): void;
   clearHighlight(): void;
   changeHighlightColor(color: number): void;
   handleResize(): void;
-  addLiPScores(lipScoreArray: Array<number>): void;
+  addLiPScores(lipscoreArray: Array<number>): void;
 };
 
 export const getStructureViewer = async (
   container: HTMLDivElement,
   onHighlightClick: (sequencePositions: SequencePosition[]) => void,
-  lipScoreArray: Array<number> // Add this parameter
+  lipscoreArray: Array<number> // Add this parameter
 ): Promise<StructureViewer> => {
   const plugin = new CustomPluginContext(spec);
   await plugin.init();
 
-  plugin.customState.lipScoreArray = lipScoreArray;
+  plugin.customState.lipscoreArray = lipscoreArray || [];
 
   console.log(plugin.builders.structure);
   plugin.builders.structure.representation.registerPreset(ViewerAutoPreset);
@@ -269,7 +277,7 @@ const structureViewer: StructureViewer = {
       true
     );
   },
-  async loadCifUrl(url:string, lipScoreArray:Array<number> = [], isBinary:boolean = false): Promise<void> {
+  async loadCifUrl(url:string, lipscoreArray:Array<number> = [], isBinary:boolean = false): Promise<void> {
     const data = await plugin.builders.data.download(
       { url, isBinary },
       { state: { isGhost: true } }
@@ -289,9 +297,9 @@ const structureViewer: StructureViewer = {
       { useDefaultIfSingleModel: true }
     );
 
-    plugin.customState.lipScoreArray = lipScoreArray;
+    plugin.customState.lipscoreArray = lipscoreArray || [];
 
-    this.addLiPScores(lipScoreArray);  
+    this.addLiPScores(lipscoreArray);  
    
   },
 
@@ -350,7 +358,7 @@ const structureViewer: StructureViewer = {
     plugin.layout.events.updated.next(null);
   },
 
-  addLiPScores(lipScoreArray: Array<number>) {
+  addLiPScores(lipscoreArray: Array<number>) {
     const structureData = plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
     if (!structureData) {
         console.error("No structure data found to apply LiP scores.");
@@ -358,14 +366,14 @@ const structureViewer: StructureViewer = {
     }
 
     const lipScoresMap = new Map<number, number>();
-    lipScoreArray.forEach((score, index) => {
+    lipscoreArray.forEach((score, index) => {
         lipScoresMap.set(index, score); 
     });
     
     // replace plddt with lipscore 
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.pLDDT = lipScoresMap;
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.pLDDT = lipScoresMap;
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.set('pLDDT', lipScoresMap);
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.lipScore= lipScoresMap;
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.lipScore = lipScoresMap;
+    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.set('lipScore', lipScoresMap);
     
     console.log("LiP scores applied and representation updated.")
 

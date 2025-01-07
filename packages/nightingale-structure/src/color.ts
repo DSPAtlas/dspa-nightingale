@@ -1,4 +1,4 @@
-import { QualityAssessment, QualityAssessmentProvider } from 'molstar/lib/extensions/model-archive/quality-assessment/prop';
+import { QualityAssessment, QualityAssessmentProvider } from './qualityassesment';
 import { Location } from 'molstar/lib/mol-model/location';
 import { Bond, Model, StructureElement, Unit } from 'molstar/lib/mol-model/structure';
 import { ColorTheme, LocationColor } from 'molstar/lib/mol-theme/color';
@@ -35,7 +35,8 @@ export function LIPColorTheme(ctx: ThemeDataContext, props: PD.Values<LIPColorTh
             if (!Unit.isAtomic(unit)) return DefaultColor;
 
             const qualityAssessment = QualityAssessmentProvider.get(unit.model).value;
-            let score = qualityAssessment?.pLDDT?.get(unit.model.atomicHierarchy.residueAtomSegments.index[element]);
+            let score = qualityAssessment?.lipScore?.get(unit.model.atomicHierarchy.residueAtomSegments.index[element]);
+            console.log("score", score);
             if (typeof score !== 'number') {
                 score = unit.model.atomicConformation.B_iso_or_equiv.value(element);
             }
@@ -71,19 +72,19 @@ export function LIPColorTheme(ctx: ThemeDataContext, props: PD.Values<LIPColorTh
         preferSmoothing: true,
         color,
         props,
-        description: 'Assigns residue colors according to the LIPvscore.',
+        description: 'Assigns residue colors according to the LIP score.',
         legend: ConfidenceColorLegend
     };
 }
 
-export const LIPColorThemeProvider: ColorTheme.Provider<LIPColorThemeParams, 'plddt-confidence'> = {
-    name: 'plddt-confidence',
-    label: 'pLDDT Confidence',
+export const LIPColorThemeProvider: ColorTheme.Provider<LIPColorThemeParams, 'lipScore'> = {
+    name: 'lipScore',
+    label: 'lipScore',
     category: ColorTheme.Category.Validation,
     factory: LIPColorTheme,
     getParams: getLIPColorThemeParams,
     defaultValues: PD.getDefaultValues(getLIPColorThemeParams({})),
-    isApplicable: (ctx: ThemeDataContext) => !!ctx.structure?.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT') || (m.atomicConformation.B_iso_or_equiv.isDefined)), //  && !Model.isExperimental(m))
+    isApplicable: (ctx: ThemeDataContext) => !!ctx.structure?.models.some(m => QualityAssessment.isApplicable(m, 'lipScore') || (m.atomicConformation.B_iso_or_equiv.isDefined)), //  && !Model.isExperimental(m))
     ensureCustomProperties: {
         attach: async (ctx: CustomProperty.Context, data: ThemeDataContext) => {
             if (data.structure) {
