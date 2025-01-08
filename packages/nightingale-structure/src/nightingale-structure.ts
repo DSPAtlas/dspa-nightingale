@@ -66,7 +66,6 @@ export type PredictionData = {
   cifUrl?: string;
   pdbUrl?: string;
   distogramUrl?: string;
-  amAnnotationsUrl?: string;
 };
 
 const uniProtMappingUrl = "https://www.ebi.ac.uk/pdbe/api/mappings/uniprot/";
@@ -75,7 +74,7 @@ const alphaFoldMappingUrl = "https://alphafold.ebi.ac.uk/api/prediction/";
 
 @customElementOnce("nightingale-structure")
 class NightingaleStructure extends withManager(
-  withHighlight(NightingaleElement)
+  withHighlight(NightingaleElement),
 ) {
 
   @property({ type: String })
@@ -89,10 +88,6 @@ class NightingaleStructure extends withManager(
 
   @property({ type: Array})
    "lipscore-array": Array<number>;
-
-  @property({ type: String })
-  "color-theme"?: string;
-
 
   @state()
   selectedMolecule?: {
@@ -168,7 +163,6 @@ class NightingaleStructure extends withManager(
     const structureViewerDiv = this.renderRoot.querySelector<HTMLDivElement>("#molstar-parent");
     
     if (structureViewerDiv) {
-
       console.log('Structure Viewer container found:', structureViewerDiv);
   
       //const lipscoreArray = this["lipscore-array"]; //this.lipscoreArray || [];
@@ -195,19 +189,16 @@ class NightingaleStructure extends withManager(
       console.log('LipScore Array:', lipscoreArray);
   
       getStructureViewer(structureViewerDiv, this.updateHighlight, lipscoreArray).then(
-
         (structureViewer) => {
           this.#structureViewer = structureViewer;
           const color = this["highlight-color"]?.substring(1, 7) || "FF6699";
           this.#structureViewer.changeHighlightColor(parseInt(color, 16));
-
         })
         .catch((error) => {
           console.error('Error initializing structure viewer:', error);
         });
     } else {
       console.error('#molstar-parent not found');
-
     }
   }
 
@@ -226,9 +217,6 @@ class NightingaleStructure extends withManager(
       this.#structureViewer?.changeHighlightColor(parseInt(color, 16));
       this.#structureViewer?.handleResize();
     }
-   // if (changedProperties.has("color-theme")) {
-      //this.#structureViewer?.applyColorTheme(this["color-theme"]);
-  //  }
   }
 
   disconnectedCallback() {
@@ -313,7 +301,7 @@ class NightingaleStructure extends withManager(
     if (this.isAF()) {
       const afPredictions = await this.loadAFEntry(this["protein-accession"]);
       const afInfo = afPredictions.find(
-        (prediction) => prediction.entryId === this["structure-id"]
+        (prediction) => prediction.entryId === this["structure-id"],
       );
       if (afInfo?.cifUrl) {
         console.log(afInfo.cifUrl);
@@ -324,16 +312,14 @@ class NightingaleStructure extends withManager(
       const pdbEntry = await this.loadPDBEntry(this["structure-id"]);
       mappings =
         Object.values(pdbEntry)[0].UniProt[this["protein-accession"]]?.mappings;
-
         if (this["custom-download-url"]) {
           await this.#structureViewer?.loadCifUrl(
             `${this["custom-download-url"]}${this["structure-id"].toLowerCase()}.cif`, lipscoreArray
           );
           this.clearMessage();
-
       } else {
         await this.#structureViewer?.loadPdb(
-          this["structure-id"].toLowerCase()
+          this["structure-id"].toLowerCase(),
         );
         this.clearMessage();
       }
@@ -361,7 +347,7 @@ class NightingaleStructure extends withManager(
   }
 
   updateHighlight(
-    sequencePositions: { chain: string; position: number }[]
+    sequencePositions: { chain: string; position: number }[],
   ): void {
     if (
       !sequencePositions?.length ||
@@ -386,8 +372,8 @@ class NightingaleStructure extends withManager(
               pos.position,
               pos.position,
               "PDB_UP",
-              this.selectedMolecule?.mappings
-            ).filter((t) => t.chain === pos.chain)
+              this.selectedMolecule?.mappings,
+            ).filter((t) => t.chain === pos.chain),
           )
           .filter(Boolean);
       } catch (error) {
@@ -436,7 +422,7 @@ class NightingaleStructure extends withManager(
             start,
             end,
             "UP_PDB",
-            this.selectedMolecule?.mappings
+            this.selectedMolecule?.mappings,
           );
         })
         .filter(Boolean);

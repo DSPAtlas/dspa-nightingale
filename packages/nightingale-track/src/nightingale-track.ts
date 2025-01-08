@@ -345,39 +345,15 @@ class NightingaleTrack extends withManager(
       )
       .style("fill", (f) => this.getFeatureFillColor(f))
       .attr("stroke", (f) => this.getFeatureColor(f))
-<<<<<<< HEAD
-      .style("fill-opacity", ({ feature }) => (feature.opacity ? feature.opacity : 0.9))
-      .style("stroke-opacity", ({ feature }) => (feature.opacity ? feature.opacity : 0.9))
-      .on("mouseover", (event, f) => {
-        const tooltip = document.getElementById("tooltip");
-        if (tooltip) {
-          tooltip.innerHTML = `<strong>XXXXX</strong><br>Type: sssssss`;
-          tooltip.style.visibility = "visible";
-        }
-      })
-      .on("mousemove", (event) => {
-        const tooltip = document.getElementById("tooltip");
-        if (tooltip) {
-          tooltip.style.top = `${event.pageY + 10}px`;
-          tooltip.style.left = `${event.pageX + 10}px`;
-        }
-      })
-      .on("mouseleave", () => {
-        const tooltip = document.getElementById("tooltip");
-        if (tooltip) {
-          tooltip.style.visibility = "hidden";
-        }
-      });
-      
-    
-=======
+
+
       .style("fill-opacity", ({ feature }) =>
         feature.opacity ? feature.opacity : 0.9
       )
       .style("stroke-opacity", ({ feature }) =>
         feature.opacity ? feature.opacity : 0.9
       );
->>>>>>> upstream/main
+
 
     const residueGroup = fragmentGroup
       .selectAll("g.residue-group")
