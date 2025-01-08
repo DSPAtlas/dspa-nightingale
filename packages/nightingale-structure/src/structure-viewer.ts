@@ -12,16 +12,15 @@ import { PluginLayoutControlsDisplay } from "molstar/lib/mol-plugin/layout";
 import { Script } from "molstar/lib/mol-script/script";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { Color } from "molstar/lib/mol-util/color";
+import { ChainIdColorThemeProvider } from "molstar/lib/mol-theme/color/chain-id";
 
-import { PresetStructureRepresentations, StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset';
-import { MAQualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
-import { QualityAssessment } from 'molstar/lib/extensions/model-archive/quality-assessment/prop';
 //import { QualityAssessmentQmeanPreset } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
 import { StateObjectRef } from 'molstar/lib/mol-state';
 import { ObjectKeys } from 'molstar/lib/mol-util/type-helpers';
 import { Structure } from 'molstar/lib/mol-model/structure/structure/structure';
+import {LIPColorTheme} from './color_new';
 
-import {LIPColorThemeProvider} from './color';
+
 
 interface CustomPluginState {
   lipscoreArray: Array<number>;
@@ -38,31 +37,31 @@ class CustomPluginContext extends PluginContext {
   }
 }
 
-export const QualityAssessmentLIPPreset = StructureRepresentationPresetProvider({
-  id: 'preset-structure-representation-ma-quality-assessment-lipScore',
-  display: {
-      name: 'lipScore', group: 'Annotation',
-      description: 'Color structure based on LIP Score.'
-  },
-  isApplicable(a) {
-      return true;
-  },
-  params: () => StructureRepresentationPresetProvider.CommonParams,
-  async apply(ref, params, plugin) {
-      const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
-      const structure = structureCell?.obj?.data;
-      if (!structureCell || !structure) return {};
+// export const QualityAssessmentLIPPreset = StructureRepresentationPresetProvider({
+//   id: 'preset-structure-representation-ma-quality-assessment-lipScore',
+//   display: {
+//       name: 'lipScore', group: 'Annotation',
+//       description: 'Color structure based on LIP Score.'
+//   },
+//   isApplicable(a) {
+//       return true;
+//   },
+//   params: () => StructureRepresentationPresetProvider.CommonParams,
+//   async apply(ref, params, plugin) {
+//       const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
+//       const structure = structureCell?.obj?.data;
+//       if (!structureCell || !structure) return {};
 
-      const colorTheme = LIPColorThemeProvider.name as any;
-      return await PresetStructureRepresentations.auto.apply(ref, { ...params, theme: { 
-        globalName: colorTheme, focus: { name: colorTheme } } }, plugin);
-  }
-});
+//       const colorTheme = LIPColorThemeProvider.name as any;
+//       return await PresetStructureRepresentations.auto.apply(ref, { ...params, theme: { 
+//         globalName: colorTheme, focus: { name: colorTheme } } }, plugin);
+//   }
+// });
 
 
-const Extensions = {
-  'ma-quality-assessment': PluginSpec.Behavior(MAQualityAssessment),
-};
+// const Extensions = {
+//  'ma-quality-assessment': PluginSpec.Behavior(MAQualityAssessment),
+//};
 
 const viewerOptions = {
   layoutIsExpanded: false,
@@ -81,9 +80,7 @@ const viewerOptions = {
   pdbProvider: "pdbe",
   viewportShowControls: PluginConfig.Viewport.ShowControls.defaultValue,
   viewportShowSettings: PluginConfig.Viewport.ShowSettings.defaultValue,
-  extensions: ObjectKeys(Extensions),
 };
-
 
 
 function addLiPScoresToStructure(structureData: Structure, lipscoreArray: Array<number>): Structure {
@@ -137,79 +134,92 @@ function addLiPScoresToStructure(structureData: Structure, lipscoreArray: Array<
 }
 
 
+// const ViewerAutoPreset = StructureRepresentationPresetProvider({
+//   id: 'preset-structure-representation-viewer-auto',
+//   display: {
+//       name: 'Automatic (w/ Annotation)', group: 'Annotation',
+//       description: 'Show standard automatic representation but colored by quality assessment (if available in the model).'
+//   },
+//   isApplicable(a) {
+//       return (
+//           !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT')) ||
+//           !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'qmean')) 
+//       );
+//   },
+//   params: () => StructureRepresentationPresetProvider.CommonParams,
+//   async apply(ref, params, plugin: CustomPluginContext) {
+//     const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
+//     const structure = structureCell?.obj?.data;
 
+//     if (!structureCell || !structure) return {};
 
-const ViewerAutoPreset = StructureRepresentationPresetProvider({
-  id: 'preset-structure-representation-viewer-auto',
-  display: {
-      name: 'Automatic (w/ Annotation)', group: 'Annotation',
-      description: 'Show standard automatic representation but colored by quality assessment (if available in the model).'
-  },
-  isApplicable(a) {
-      return (
-          !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT')) ||
-          !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'qmean'))
-      );
-  },
-  params: () => StructureRepresentationPresetProvider.CommonParams,
-  async apply(ref, params, plugin: CustomPluginContext) {
-    const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
-    const structure = structureCell?.obj?.data;
+//     const lipscoreArray = plugin.customState.lipscoreArray;
 
-    if (!structureCell || !structure) return {};
+//     // Apply LiP scores
+//     if (lipscoreArray && lipscoreArray.length > 0) {
+//         console.log('Applying LiP scores...');
+//         addLiPScoresToStructure(structure, lipscoreArray);
+//     } else {
+//         console.warn('No LiP scores provided. Skipping application.');
+//     }
 
-    const lipscoreArray = plugin.customState.lipscoreArray;
+//     // Apply the quality assessment presets or the default representation preset
+//     if (lipscoreArray && lipscoreArray.length > 0) {
+//         console.log('Applying LiP Score Preset...', structure);
+//         console.log('rtest');
+//         return await QualityAssessmentLIPPreset.apply(ref, params, plugin);
+//     } else {
+//         console.log('Applying default auto preset');
+//         return await PresetStructureRepresentations.auto.apply(ref, params, plugin);
+//     }
+// }
 
-    // Apply LiP scores
-    if (lipscoreArray && lipscoreArray.length > 0) {
-        console.log('Applying LiP scores...');
-        addLiPScoresToStructure(structure, lipscoreArray);
-    } else {
-        console.warn('No LiP scores provided. Skipping application.');
-    }
-
-    // Apply the quality assessment presets or the default representation preset
-    if (lipscoreArray && lipscoreArray.length > 0) {
-        console.log('Applying LiP Score Preset...', structure);
-        console.log('rtest');
-        return await QualityAssessmentLIPPreset.apply(ref, params, plugin);
-    } else {
-        console.log('Applying default auto preset');
-        return await PresetStructureRepresentations.auto.apply(ref, params, plugin);
-    }
-}
-
-});
+// });
 
 const defaultSpec = DefaultPluginSpec(); // TODO: Make our own to select only essential plugins
 const spec: PluginSpec = {
-actions: defaultSpec.actions,
-behaviors: [
+  actions: defaultSpec.actions,
+  behaviors: [
     ...defaultSpec.behaviors,
-    ...viewerOptions.extensions.map(e => Extensions[e]),
-],
-layout: {
-  initial: {
-    isExpanded: viewerOptions.layoutIsExpanded,
-    showControls: viewerOptions.layoutShowControls,
-    controlsDisplay: viewerOptions.layoutControlsDisplay,
+    //PluginSpec.Behavior(AfConfidenceScore, {
+     // autoAttach: true,
+      //showTooltip: true,
+    //}),
+  ],
+  layout: {
+    initial: {
+      isExpanded: viewerOptions.layoutIsExpanded,
+      showControls: viewerOptions.layoutShowControls,
+      controlsDisplay: viewerOptions.layoutControlsDisplay,
+    },
   },
-},
-config: [
-  [
-    PluginConfig.General.DisableAntialiasing,
-    viewerOptions.disableAntialiasing,
+  config: [
+    [
+      PluginConfig.General.DisableAntialiasing,
+      viewerOptions.disableAntialiasing,
+    ],
+    [PluginConfig.General.PixelScale, viewerOptions.pixelScale],
+    [PluginConfig.General.EnableWboit, viewerOptions.enableWboit],
+    [PluginConfig.Viewport.ShowExpand, viewerOptions.viewportShowExpand],
+    [
+      PluginConfig.Viewport.ShowSelectionMode,
+      viewerOptions.viewportShowSelectionMode,
+    ],
+    [PluginConfig.Download.DefaultPdbProvider, viewerOptions.pdbProvider],
+    [
+      PluginConfig.Structure.DefaultRepresentationPresetParams,
+      {
+        theme: {
+          globalName: "af-confidence",
+          carbonByChainId: false,
+          focus: {
+            name: "element-symbol",
+            params: { carbonByChainId: false },
+          },
+        },
+      },
+    ],
   ],
-  [PluginConfig.General.PixelScale, viewerOptions.pixelScale],
-  [PluginConfig.General.EnableWboit, viewerOptions.enableWboit],
-  [PluginConfig.Viewport.ShowExpand, viewerOptions.viewportShowExpand],
-  [
-    PluginConfig.Viewport.ShowSelectionMode,
-    viewerOptions.viewportShowSelectionMode,
-  ],
-  [PluginConfig.Download.DefaultPdbProvider, viewerOptions.pdbProvider],
-  [PluginConfig.Structure.DefaultRepresentationPreset, ViewerAutoPreset.id],
-],
 };
 
 type SequencePosition = { chain: string; position: number };
@@ -217,7 +227,6 @@ type Range = { chain: string; start: number; end: number };
 
 export type StructureViewer = {
   plugin: CustomPluginContext;
-  //lipscoreList
   loadPdb(pdb: string): Promise<void>;
   loadCifUrl(url: string, lipscoreArray: Array<number>, isBinary?: boolean): Promise<void>;
   highlight(ranges: Range[]): void;
@@ -225,26 +234,40 @@ export type StructureViewer = {
   changeHighlightColor(color: number): void;
   handleResize(): void;
   addLiPScores(lipscoreArray: Array<number>): void;
+  applyLipColorTheme(): void;
 };
 
+
+
 export const getStructureViewer = async (
+  
   container: HTMLDivElement,
   onHighlightClick: (sequencePositions: SequencePosition[]) => void,
-  lipscoreArray: Array<number> // Add this parameter
+  lipscoreArray: Array<number>,
+  colorTheme?: string
 ): Promise<StructureViewer> => {
-  const plugin = new CustomPluginContext(spec);
+  const spec: PluginSpec = DefaultPluginSpec(); // Adjust this based on your specific plugin requirements
+  const plugin = new CustomPluginContext(spec); // Use your custom context
   await plugin.init();
 
-  plugin.customState.lipscoreArray = lipscoreArray || [];
-
-  console.log(plugin.builders.structure);
-  plugin.builders.structure.representation.registerPreset(ViewerAutoPreset);
-
   const canvas = container.querySelector<HTMLCanvasElement>("canvas");
+
   if (!canvas || !plugin.initViewer(canvas, container)) {
     throw new Error("Failed to init Mol*");
-}
+  }
 
+  if (LIPColorTheme.colorThemeProvider)
+    plugin.representation.structure.themes.colorThemeRegistry.add(
+      LIPColorTheme.colorThemeProvider
+    );
+  if (LIPColorTheme.labelProvider)
+    plugin.managers.lociLabels.addProvider(
+      LIPColorTheme.labelProvider
+    );
+  plugin.customModelProperties.register(
+    LIPColorTheme.propertyProvider,
+    true
+  );
 
 
 plugin.behaviors.interaction.click.subscribe((event) => {
@@ -282,15 +305,11 @@ const structureViewer: StructureViewer = {
       { url, isBinary },
       { state: { isGhost: true } }
     );
-
-    console.log("data", data);
-
     const trajectory = await plugin.builders.structure.parseTrajectory(
       data,
       "mmcif"
     );
 
-    
     await plugin.builders.structure.hierarchy.applyPreset(
       trajectory,
       "all-models",
@@ -298,9 +317,62 @@ const structureViewer: StructureViewer = {
     );
 
     plugin.customState.lipscoreArray = lipscoreArray || [];
-
     this.addLiPScores(lipscoreArray);  
-   
+    this.applyLipColorTheme();
+    // TODO maybe add here more logic
+  },
+  addLiPScores(lipscoreArray: Array<number>) {
+    const structureData = plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
+    if (!lipscoreArray || lipscoreArray.length === 0) {
+      console.error('lipScoreArray is null or empty. Skipping LiP scores application.');
+      return structureData;
+    }
+    if(!structureData){
+      return;
+    }
+  
+    const lipScoresMap = new Map();
+    lipscoreArray.forEach((score, index) => {
+      lipScoresMap.set(index, score);
+    });
+  
+    const modelData = structureData.models?.[0]._staticPropertyData;
+    if (!modelData) {
+      console.error("Model data is missing in the structure data.");
+      return structureData;
+    }
+  
+    // Initialize ma_quality_assessment if it doesn't exist
+    modelData.ma_quality_assessment = modelData.ma_quality_assessment || { data: { value: { lipScore: undefined, localMetrics: undefined } } };
+    modelData.ma_quality_assessment.data = modelData.ma_quality_assessment.data || { value: { lipScore: undefined, localMetrics: undefined } };
+    modelData.ma_quality_assessment.data.value = modelData.ma_quality_assessment.data.value || { lipScore: undefined, localMetrics: undefined };
+    modelData.ma_quality_assessment.data.value.localMetrics = modelData.ma_quality_assessment.data.value.localMetrics || new Map();
+  
+    // Assign the LiP scores map
+    modelData.ma_quality_assessment.data.value.lipScore = lipScoresMap;
+    modelData.ma_quality_assessment.data.value.localMetrics = lipScoresMap;
+  
+    console.log('LiP scores successfully added to structure data.');
+    console.log('Updated structure data:', JSON.stringify(modelData, null, 2));
+  },
+
+  applyLipColorTheme() {
+    let colouringTheme: string;
+    
+    colouringTheme = LIPColorTheme.propertyProvider.descriptor.name;
+    
+    // apply colouring
+    plugin?.dataTransaction(async () => {
+      for (const s of plugin?.managers.structure.hierarchy.current
+        .structures || []) {
+        await plugin?.managers.structure.component.updateRepresentationsTheme(
+          s.components,
+          {
+            color: colouringTheme as typeof ChainIdColorThemeProvider.name,
+          }
+        );
+      }
+    });
   },
 
   highlight(ranges) {
@@ -357,29 +429,7 @@ const structureViewer: StructureViewer = {
   handleResize() {
     plugin.layout.events.updated.next(null);
   },
-
-  addLiPScores(lipscoreArray: Array<number>) {
-    const structureData = plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
-    if (!structureData) {
-        console.error("No structure data found to apply LiP scores.");
-        return;
-    }
-
-    const lipScoresMap = new Map<number, number>();
-    lipscoreArray.forEach((score, index) => {
-        lipScoresMap.set(index, score); 
-    });
-    
-    // replace plddt with lipscore 
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.lipScore= lipScoresMap;
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.lipScore = lipScoresMap;
-    structureData.models[0]._staticPropertyData.ma_quality_assessment.data.value.localMetrics.set('lipScore', lipScoresMap);
-    
-    console.log("LiP scores applied and representation updated.")
-
-      },
-    };
-
-   
+};
+  //  plugin.builders.structure.representation.registerPreset(ViewerAutoPreset);
   return structureViewer;
 };
