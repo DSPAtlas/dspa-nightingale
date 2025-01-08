@@ -17,18 +17,16 @@ import withPosition, { withPositionInterface } from "../withPosition";
 import withMargin, { withMarginInterface } from "../withMargin";
 import withResizable, { WithResizableInterface } from "../withResizable";
 
+
+type SVGSelection = Selection<SVGSVGElement, unknown, HTMLElement | SVGElement | null, unknown>;
+
 export interface WithZoomInterface
   extends WithDimensionsInterface,
-    withPositionInterface,
-    withMarginInterface,
-    WithResizableInterface {
+  withPositionInterface,
+  withMarginInterface,
+  WithResizableInterface {
   xScale?: ScaleLinear<number, number>;
-  svg?: Selection<
-    SVGSVGElement,
-    unknown,
-    HTMLElement | SVGElement | null,
-    unknown
-  >;
+  svg?: SVGSelection;
   updateScaleDomain(): void;
   getSingleBaseWidth(): number;
   getXFromSeqPosition(position: number): number;
@@ -37,11 +35,11 @@ export interface WithZoomInterface
 const ATTRIBUTES_THAT_TRIGGER_REFRESH = ["length", "width", "height"];
 
 const withZoom = <T extends Constructor<NightingaleBaseElement>>(
-  superClass: T
+  superClass: T,
 ) => {
   class WithZoom extends withMargin(
-    withPosition(withResizable(withDimensions(superClass)))
-  ) {
+    withPosition(withResizable(withDimensions(superClass))),
+  ) implements WithZoomInterface {
     _applyZoomTranslation: () => void;
     /**
      * Base scale without any transformations, only updated in `updateScaleDomain`
@@ -55,8 +53,8 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
      * Current scale, the one used to calculate any positions. Calculated based on `display-start` and `display-end`.
      */
     xScale?: ScaleLinear<number, number>;
-    _zoom?: ZoomBehavior<HTMLElement, unknown>;
-    _svg?: Selection<HTMLElement, unknown, HTMLElement, unknown>;
+    _zoom?: ZoomBehavior<SVGSVGElement, unknown>;
+    _svg?: SVGSelection;
     dontDispatch?: boolean;
 
     @property({ type: Boolean })
@@ -105,24 +103,24 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
       return this._zoom;
     }
 
-    set svg(svg) {
+    set svg(svg: SVGSelection) {
       if (!svg || !this._zoom) return;
       this._svg = svg;
       svg.call(this._zoom).on("dblclick.zoom", null);
       this.applyZoomTranslation();
     }
 
-    get svg() {
+    get svg(): SVGSelection | undefined {
       return this._svg;
     }
 
     updateScaleDomain() {
-      this.xScale = scaleLinear()
+      this.originXScale = scaleLinear()
         // The max width should match the start of the n+1 base
         .domain([1, (this.length || 0) + 1])
         .range([0, this.getWidthWithMargins()]);
-      this.originXScale = this.xScale?.copy();
-      this.tmpXScale = this.xScale?.copy();
+      this.tmpXScale = this.originXScale.copy();
+      this.xScale ??= this.originXScale.copy(); // Do not force set `xScale`, will be updated in `zoomed`
       this.zoom?.translateExtent([
         [0, 0],
         [this.getWidthWithMargins(), 0],
@@ -130,7 +128,7 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
     }
 
     _initZoom() {
-      this._zoom = d3zoom<HTMLElement, unknown>()
+      this._zoom = d3zoom<SVGSVGElement, unknown>()
         .scaleExtent([1, Infinity])
         .translateExtent([
           [0, 0],
@@ -157,7 +155,7 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
     attributeChangedCallback(
       name: string,
       oldValue: string | null,
-      newValue: string | null
+      newValue: string | null,
     ): void {
       super.attributeChangedCallback(name, oldValue, newValue);
 
@@ -190,12 +188,12 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
                 "display-start": Math.max(1, start),
                 "display-end": Math.min(
                   this.length || 0,
-                  Math.max(end - 1, start + 1) // To make sure it never zooms in deeper than showing 2 bases covering the full width
+                  Math.max(end - 1, start + 1), // To make sure it never zooms in deeper than showing 2 bases covering the full width
                 ),
               },
               bubbles: true,
               cancelable: true,
-            })
+            }),
           );
         }
       }
@@ -208,7 +206,7 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
         1,
         // +1 because the displayend base should be included
         (this.length || 0) /
-          (1 + (this["display-end"] || 0) - (this["display-start"] || 0))
+        (1 + (this["display-end"] || 0) - (this["display-start"] || 0)),
       );
       // The deltaX gets calculated using the position of the first base to display in original scale
       const dx = -this.originXScale(this["display-start"] || 0);
@@ -219,7 +217,7 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
           this.zoom.transform,
           zoomIdentity // Identity transformation
             .scale(k) // Scaled by our scaled factor
-            .translate(dx, 0) // Translated by the delta
+            .translate(dx, 0), // Translated by the delta
         );
       }
       this.dontDispatch = false;

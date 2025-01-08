@@ -218,9 +218,10 @@ export const transformData = (
     (variant) =>
       ({
         ...variant,
-        accession: (variant.genomicLocation || []).length !== 0 
-            ? (variant.genomicLocation || [])[0] 
-            : '',
+        accession:
+          (variant.genomicLocation || []).length !== 0
+            ? (variant.genomicLocation || [])[0]
+            : String(Math.random()),
         variant: variant.alternativeSequence
           ? variant.alternativeSequence
           : AminoAcid.Empty,
@@ -228,7 +229,6 @@ export const transformData = (
         xrefNames: getSourceType(variant.xrefs, variant.sourceType),
         hasPredictions: variant.predictions && variant.predictions.length > 0,
         //   tooltipContent: formatTooltip(variant),
-        protvistaFeatureId: String(Math.random()),
         consequenceType: variant.consequenceType,
       }) as VariationDatum
   );
