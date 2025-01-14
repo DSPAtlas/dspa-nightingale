@@ -36,38 +36,46 @@ interface NamedCustomProperty extends CustomProperty {
     name: string;
 }
 
-
-
 export const LIPColorTheme = CustomElementProperty.create({
-    label: "LIP Score Coloring",
-    name: "lip-score-coloring",
-    getData: (model) => {
-        console.log('Fetching ma_quality_assessment data from model...');
-        const lip = new Array(254).fill(70);
-        
-        const maQualityAssessment = model._staticPropertyData?.ma_quality_assessment?.data?.value;
-        if (lip) {
-            // Create a Map where each key is the index and the value is the value from the lip array
-            const lipMap = new Map(lip.map((value, index) => [index, value]));
-            console.log('lipMap created:', lipMap);
-            return { value: lipMap };
+  label: "LIP Score Coloring",
+  name: "lip-score-coloring",
+  getData: (model) => {
+      console.log('Fetching ma_quality_assessment data from model...',model);
+      //const lip = new Array(1000).fill(70);
+      const residueIndex = model.atomicHierarchy.residueAtomSegments.index;
+      console.log("residueindex", residueIndex);
+      const lip = Array.from(model._staticPropertyData?.ma_quality_assessment?.data?.value.lipScore.values());
+      
+      if (lip && model.atomicHierarchy.residueAtomSegments) {
+        const residueIndex = model.atomicHierarchy.residueAtomSegments.index;
+        const residueRowCount = model.atomicHierarchy.atoms._rowCount;
+  
+        // Create a map where residue indices are keys, and LiP scores are values
+        const lipMap = new Map();
+  
+        for (let i = 0; i < residueRowCount; i++) {
+          const residueId = residueIndex[i]; // Map atom index to residue index
+          const score = lip[residueId] || 0; // Use LiP score or default to 0
+          lipMap.set(i, score); // Set atom index to score
         }
-        if (!maQualityAssessment || !maQualityAssessment.lipScore) {
-            return { value: new Map() };
-        }
-        
-       // console.log('lipScore data found:', maQualityAssessment.lipScore);
-        return { value: maQualityAssessment.lipScore };
-       
-    },
-    coloring: {
-        getColor: (e) => {
-            const score= e as number; // e as number;
-            if (score > 90) return Color.fromRgb(255, 0, 0); // High scores in red
-            if (score > 50) return Color.fromRgb(255, 165, 0); // Medium scores in orange
-            return Color.fromRgb(0, 255, 0); // Low scores in green
-        },
-        defaultColor: Color(0xCCCCCC) // Default gray color if no score is available
-    },
-    getLabel: (e) => `LIP Score: ${e}`
+  
+        console.log('lipMap created:', model);
+        return { value: lipMap };
+      }
+      
+     // console.log('lipScore data found:', maQualityAssessment.lipScore);
+      return { value:new Map() };
+     
+  },
+  coloring: {
+      getColor: (e) => {
+          const score= e as number; // e as number;
+          if (score > 90) return Color.fromRgb(255, 0, 0); // High scores in red
+          if (score > 50) return Color.fromRgb(255, 165, 0); // Medium scores in orange
+          return Color.fromRgb(0, 255, 0); // Low scores in green
+      },
+      defaultColor: Color(0xCCCCCC) // Default gray color if no score is available
+  },
+  getLabel: (e) => `LIP Score: ${e}`
 });
+  

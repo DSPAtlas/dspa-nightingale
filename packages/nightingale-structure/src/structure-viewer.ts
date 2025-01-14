@@ -357,23 +357,20 @@ const structureViewer: StructureViewer = {
   },
 
   applyLipColorTheme() {
-    let colouringTheme: string;
-    
-    colouringTheme = LIPColorTheme.propertyProvider.descriptor.name;
-    
-    // apply colouring
-    plugin?.dataTransaction(async () => {
-      for (const s of plugin?.managers.structure.hierarchy.current
-        .structures || []) {
-        await plugin?.managers.structure.component.updateRepresentationsTheme(
-          s.components,
+    plugin.dataTransaction(async () => {
+      for (const structure of plugin.managers.structure.hierarchy.current.structures || []) {
+        await plugin.managers.structure.component.updateRepresentationsTheme(
+          structure.components,
           {
-            color: colouringTheme as typeof ChainIdColorThemeProvider.name,
+            color: LIPColorTheme.propertyProvider.descriptor.name as typeof ChainIdColorThemeProvider.name, // Replace with a predefined type
           }
         );
       }
     });
   },
+  
+  
+    
 
   highlight(ranges) {
     // What nightingale calls "highlight", mol* calls "select"
