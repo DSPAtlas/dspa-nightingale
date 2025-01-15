@@ -8,10 +8,12 @@ const NightingaleComponent = () => {
     useEffect(() => {
         if (structureRef.current) {
             // Setting up the properties for the nightingale-structure
-            structureRef.current.setAttribute('protein-accession', 'P05067'); // Hard-coded protein accession
-            structureRef.current.setAttribute('structure-id', 'AF-P05067-F1'); // Hard-coded structure ID
+            structureRef.current.setAttribute('protein-accession', 'P25443'); // Hard-coded protein accession
+            structureRef.current.setAttribute('structure-id', 'AF-P25443-F1'); // Hard-coded structure ID
             structureRef.current.setAttribute('highlight-color', '#FF6699');
-            structureRef.current.setAttribute('lipscore-array', JSON.stringify(Array(770).fill(100))); // Example LipScore array
+            const randomLipScoreArray = Array.from({ length: 254 }, () => Math.floor(Math.random() * 8));
+            structureRef.current.setAttribute('lipscore-array', JSON.stringify(randomLipScoreArray));
+// Example LipScore array
         }
     }, []);
 

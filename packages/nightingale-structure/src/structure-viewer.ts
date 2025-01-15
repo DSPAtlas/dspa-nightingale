@@ -14,10 +14,6 @@ import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { Color } from "molstar/lib/mol-util/color";
 import { ChainIdColorThemeProvider } from "molstar/lib/mol-theme/color/chain-id";
 
-//import { QualityAssessmentQmeanPreset } from 'molstar/lib/extensions/model-archive/quality-assessment/behavior';
-import { StateObjectRef } from 'molstar/lib/mol-state';
-import { ObjectKeys } from 'molstar/lib/mol-util/type-helpers';
-import { Structure } from 'molstar/lib/mol-model/structure/structure/structure';
 import {LIPColorTheme} from './color_new';
 
 
@@ -36,32 +32,6 @@ class CustomPluginContext extends PluginContext {
     };
   }
 }
-
-// export const QualityAssessmentLIPPreset = StructureRepresentationPresetProvider({
-//   id: 'preset-structure-representation-ma-quality-assessment-lipScore',
-//   display: {
-//       name: 'lipScore', group: 'Annotation',
-//       description: 'Color structure based on LIP Score.'
-//   },
-//   isApplicable(a) {
-//       return true;
-//   },
-//   params: () => StructureRepresentationPresetProvider.CommonParams,
-//   async apply(ref, params, plugin) {
-//       const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
-//       const structure = structureCell?.obj?.data;
-//       if (!structureCell || !structure) return {};
-
-//       const colorTheme = LIPColorThemeProvider.name as any;
-//       return await PresetStructureRepresentations.auto.apply(ref, { ...params, theme: { 
-//         globalName: colorTheme, focus: { name: colorTheme } } }, plugin);
-//   }
-// });
-
-
-// const Extensions = {
-//  'ma-quality-assessment': PluginSpec.Behavior(MAQualityAssessment),
-//};
 
 const viewerOptions = {
   layoutIsExpanded: false,
@@ -83,108 +53,12 @@ const viewerOptions = {
 };
 
 
-function addLiPScoresToStructure(structureData: Structure, lipscoreArray: Array<number>): Structure {
-  if (!lipscoreArray || lipscoreArray.length === 0) {
-      console.error('lipScoreArray is null or empty. Skipping LiP scores application.');
-      return structureData;
-  }
-
-  const lipScoresMap = new Map<number, number>();
-  lipscoreArray.forEach((score, index) => {
-      lipScoresMap.set(index, score); 
-  });
-
-  const modelData = structureData.models[0]._staticPropertyData;
-
-  // Ensure `ma_quality_assessment` and its nested properties are initialized
-  if (!modelData.ma_quality_assessment) {
-      modelData.ma_quality_assessment = {
-          data: {
-              value: {
-                  lipScore: undefined,
-                  localMetrics: undefined,
-              },
-          },
-      };
-  } else if (!modelData.ma_quality_assessment.data) {
-      modelData.ma_quality_assessment.data = {
-          value: {
-              lipScore: undefined,
-              localMetrics: undefined,
-          },
-      };
-  } else if (!modelData.ma_quality_assessment.data.value) {
-      modelData.ma_quality_assessment.data.value = {
-          lipScore: undefined,
-          localMetrics: undefined,
-      };
-  } else if (!modelData.ma_quality_assessment.data.value.localMetrics) {
-      // Initialize `localMetrics` as a Map
-      modelData.ma_quality_assessment.data.value.localMetrics = new Map<number, number>();
-  }
-
-  // Assign the LiP scores map
-  modelData.ma_quality_assessment.data.value.lipScore = lipScoresMap;
-  modelData.ma_quality_assessment.data.value.localMetrics = lipScoresMap;
-
-  console.log('LiP scores successfully added to structure data.');
-  console.log('Updated structure data:', JSON.stringify(modelData, null, 2));
-
-  return structureData;
-}
-
-
-// const ViewerAutoPreset = StructureRepresentationPresetProvider({
-//   id: 'preset-structure-representation-viewer-auto',
-//   display: {
-//       name: 'Automatic (w/ Annotation)', group: 'Annotation',
-//       description: 'Show standard automatic representation but colored by quality assessment (if available in the model).'
-//   },
-//   isApplicable(a) {
-//       return (
-//           !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'pLDDT')) ||
-//           !!a.data.models.some(m => QualityAssessment.isApplicable(m, 'qmean')) 
-//       );
-//   },
-//   params: () => StructureRepresentationPresetProvider.CommonParams,
-//   async apply(ref, params, plugin: CustomPluginContext) {
-//     const structureCell = StateObjectRef.resolveAndCheck(plugin.state.data, ref);
-//     const structure = structureCell?.obj?.data;
-
-//     if (!structureCell || !structure) return {};
-
-//     const lipscoreArray = plugin.customState.lipscoreArray;
-
-//     // Apply LiP scores
-//     if (lipscoreArray && lipscoreArray.length > 0) {
-//         console.log('Applying LiP scores...');
-//         addLiPScoresToStructure(structure, lipscoreArray);
-//     } else {
-//         console.warn('No LiP scores provided. Skipping application.');
-//     }
-
-//     // Apply the quality assessment presets or the default representation preset
-//     if (lipscoreArray && lipscoreArray.length > 0) {
-//         console.log('Applying LiP Score Preset...', structure);
-//         console.log('rtest');
-//         return await QualityAssessmentLIPPreset.apply(ref, params, plugin);
-//     } else {
-//         console.log('Applying default auto preset');
-//         return await PresetStructureRepresentations.auto.apply(ref, params, plugin);
-//     }
-// }
-
-// });
 
 const defaultSpec = DefaultPluginSpec(); // TODO: Make our own to select only essential plugins
 const spec: PluginSpec = {
   actions: defaultSpec.actions,
   behaviors: [
     ...defaultSpec.behaviors,
-    //PluginSpec.Behavior(AfConfidenceScore, {
-     // autoAttach: true,
-      //showTooltip: true,
-    //}),
   ],
   layout: {
     initial: {
@@ -280,6 +154,7 @@ plugin.behaviors.interaction.click.subscribe((event) => {
   }
 });
 
+
 PluginCommands.Canvas3D.SetSettings(plugin, {
   settings: ({ renderer, marking }) => {
     renderer.backgroundColor = Color(0xffffff);
@@ -288,6 +163,10 @@ PluginCommands.Canvas3D.SetSettings(plugin, {
     renderer.selectStrength = 0;
     // For hover
     renderer.highlightStrength = 1;
+    renderer.backgroundColor = Color(0xffffff); // Set background to white
+    renderer.pickingAlphaThreshold = 0.5; // Adjust picking alpha threshold
+
+   
   },
 });
 

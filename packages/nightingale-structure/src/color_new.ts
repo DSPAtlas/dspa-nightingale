@@ -70,9 +70,11 @@ export const LIPColorTheme = CustomElementProperty.create({
   coloring: {
       getColor: (e) => {
           const score= e as number; // e as number;
-          if (score > 90) return Color.fromRgb(255, 0, 0); // High scores in red
-          if (score > 50) return Color.fromRgb(255, 165, 0); // Medium scores in orange
-          return Color.fromRgb(0, 255, 0); // Low scores in green
+          if (score > 7) return Color.fromRgb(120, 33, 98);
+          if (score > 5) return Color.fromRgb(218, 73, 169); // High scores in red
+          if (score > 4) return Color.fromRgb(242, 192, 225); // Medium scores in orange
+          if (score > 3) return Color.fromRgb(251, 234, 245);
+          return Color.fromRgb(172, 193, 219); // Low scores in green
       },
       defaultColor: Color(0xCCCCCC) // Default gray color if no score is available
   },
