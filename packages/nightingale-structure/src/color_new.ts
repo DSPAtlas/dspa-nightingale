@@ -22,7 +22,6 @@ const amColorScale = scaleLinear(
   AM_COLOR_SCALE.colors
 );
 
-// eslint-disable-next-line no-magic-numbers
 const defaultColor = Color(0x000000);
 
 interface CustomProperty {
@@ -40,10 +39,6 @@ export const LIPColorTheme = CustomElementProperty.create({
   label: "LIP Score Coloring",
   name: "lip-score-coloring",
   getData: (model) => {
-      console.log('Fetching ma_quality_assessment data from model...',model);
-      //const lip = new Array(1000).fill(70);
-      const residueIndex = model.atomicHierarchy.residueAtomSegments.index;
-      console.log("residueindex", residueIndex);
       const lip = Array.from(model._staticPropertyData?.ma_quality_assessment?.data?.value.lipScore.values());
       
       if (lip && model.atomicHierarchy.residueAtomSegments) {
@@ -62,8 +57,7 @@ export const LIPColorTheme = CustomElementProperty.create({
         console.log('lipMap created:', model);
         return { value: lipMap };
       }
-      
-     // console.log('lipScore data found:', maQualityAssessment.lipScore);
+
       return { value:new Map() };
      
   },
@@ -71,12 +65,12 @@ export const LIPColorTheme = CustomElementProperty.create({
       getColor: (e) => {
           const score= e as number; // e as number;
           if (score > 7) return Color.fromRgb(120, 33, 98);
-          if (score > 5) return Color.fromRgb(218, 73, 169); // High scores in red
-          if (score > 4) return Color.fromRgb(242, 192, 225); // Medium scores in orange
+          if (score > 5) return Color.fromRgb(218, 73, 169); 
+          if (score > 4) return Color.fromRgb(242, 192, 225); 
           if (score > 3) return Color.fromRgb(251, 234, 245);
-          return Color.fromRgb(172, 193, 219); // Low scores in green
+          return Color.fromRgb(172, 193, 219); 
       },
-      defaultColor: Color(0xCCCCCC) // Default gray color if no score is available
+      defaultColor: Color(0xCCCCCC) 
   },
   getLabel: (e) => `LIP Score: ${e}`
 });

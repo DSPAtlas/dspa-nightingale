@@ -24,58 +24,6 @@ export function getLIPColorThemeParams(ctx: ThemeDataContext) {
 }
 export type LIPColorThemeParams = ReturnType<typeof getLIPColorThemeParams>
 
-// export function LIPColorTheme(ctx: ThemeDataContext, props: PD.Values<LIPColorThemeParams>): ColorTheme<LIPColorThemeParams> {
-//     let color: LocationColor = () => DefaultColor;
-
-//     if (ctx.structure) {
-//         const l = StructureElement.Location.create(ctx.structure.root);
-
-//         const getColor = (location: StructureElement.Location): Color => {
-//             const { unit, element } = location;
-//             if (!Unit.isAtomic(unit)) return DefaultColor;
-
-//             const qualityAssessment = QualityAssessmentProvider.get(unit.model).value;
-//             let score = qualityAssessment?.lipScore?.get(unit.model.atomicHierarchy.residueAtomSegments.index[element]);
-//             console.log("score", score);
-//             if (typeof score !== 'number') {
-//                 score = unit.model.atomicConformation.B_iso_or_equiv.value(element);
-//             }
-
-//             if (score < 0) {
-//                 return DefaultColor;
-//             } else if (score <= 50) {
-//                 return Color(0xfb3b3ff);
-//             } else if (score <= 70) {
-//                 return Color(0xf2d9e6);
-//             } else if (score <= 90) {
-//                 return Color(0xd98cb3);
-//             } else {
-//                 return Color(0x993366);
-//             }
-//         };
-
-//         color = (location: Location) => {
-//             if (StructureElement.Location.is(location)) {
-//                 return getColor(location);
-//             } else if (Bond.isLocation(location)) {
-//                 l.unit = location.aUnit;
-//                 l.element = location.aUnit.elements[location.aIndex];
-//                 return getColor(l);
-//             }
-//             return DefaultColor;
-//         };
-//     }
-
-//     return {
-//         factory: LIPColorTheme,
-//         granularity: 'group',
-//         preferSmoothing: true,
-//         color,
-//         props,
-//         description: 'Assigns residue colors according to the LIP score.',
-//         legend: ConfidenceColorLegend
-//     };
-// }
 
 export const LIPColorThemeProvider: ColorTheme.Provider<LIPColorThemeParams, 'lipScore'> = {
     name: 'lipScore',

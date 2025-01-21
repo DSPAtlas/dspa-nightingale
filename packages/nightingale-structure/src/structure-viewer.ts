@@ -306,6 +306,5 @@ const structureViewer: StructureViewer = {
     plugin.layout.events.updated.next(null);
   },
 };
-  //  plugin.builders.structure.representation.registerPreset(ViewerAutoPreset);
   return structureViewer;
 };
