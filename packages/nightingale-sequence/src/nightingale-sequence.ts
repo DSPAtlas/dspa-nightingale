@@ -70,6 +70,7 @@ class NightingaleSequence extends withManager(
   numberOfTicks?: number;
   chWidth?: number;
   chHeight?: number;
+ 
 
   connectedCallback() {
     super.connectedCallback();
@@ -78,7 +79,8 @@ class NightingaleSequence extends withManager(
       ? ticks
       : DEFAULT_NUMBER_OF_TICKS;
     this.addEventListener("load", (e: Event) => {
-      this.data = (e as CustomEvent).detail.payload;
+      if (!(e instanceof CustomEvent)) return; 
+      this.data = e.detail.payload;
     });
   }
 
@@ -105,11 +107,11 @@ class NightingaleSequence extends withManager(
       this.chWidth = node.getBBox().width * xratio;
       this.chHeight = node.getBBox().height * yratio;
     } else {
-      // Add a dummy node to measure the width
       const tempNode = this.seq_g
         .append("text")
         .attr("class", "base")
         .text("T");
+        console.log("temonode", tempNode);
       this.chWidth = (tempNode.node()?.getBBox().width || 0) * xratio;
       this.chHeight = (tempNode.node()?.getBBox().height || 0) * yratio;
       tempNode.remove();
@@ -139,7 +141,9 @@ class NightingaleSequence extends withManager(
 
     this.highlighted = this.svg.append("g").attr("class", "highlighted");
     this.margins = this.svg.append("g").attr("class", "margin");
+    this.length = this.sequence?.length || 0;
     if (this.sequence) {
+  
       this.updateScaleDomain();
       this.applyZoomTranslation();
     }
@@ -179,9 +183,12 @@ class NightingaleSequence extends withManager(
 
       // only add axis if there is room
       if (this.height > (this.chWidth || 0) && this.xScale) {
+        const tickSpacing = Math.ceil((this.sequence?.length ?? 0) / (this.width / this.getSingleBaseWidth()));
         const xAxis = axisBottom(this.xScale)
-          .tickFormat((d) => `${Number.isInteger(d) ? d : ""}`)
-          .ticks(this.numberOfTicks, "s");
+          //.tickFormat((d) => `${Number.isInteger(d) ? d : ""}`)
+          //.ticks(this.numberOfTicks, "s");
+          .tickValues([...Array(this.sequence?.length).keys()].filter(i => i % tickSpacing === 0))
+          .tickFormat(d => `${d}`);
         this.#axis.call(xAxis);
       }
 
@@ -235,6 +242,8 @@ class NightingaleSequence extends withManager(
           .attr("x", (d) => this.getXFromSeqPosition(d.position) + half);
 
         if (this.#seq_bg) {
+          console.log("entering seq:bg");
+         // console.log("d", d);
           const background = this.#seq_bg
             .selectAll("rect.base_bg")
             .data(bases, (d) => (d as SequenceBaseType).position);
@@ -287,7 +296,7 @@ class NightingaleSequence extends withManager(
           start: number;
           end: number;
         }[]
-      >("rect")
+      >("rect") 
       .data(this.highlightedRegion.segments);
 
     highlighs

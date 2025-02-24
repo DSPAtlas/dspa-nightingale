@@ -246,8 +246,10 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
 
     getSingleBaseWidth() {
       if (!this.xScale) return -1;
-      return this.xScale(2) - this.xScale(1);
-    }
+      const minWidth = 10;  
+      const calculatedWidth = this.xScale(2) - this.xScale(1);
+      return Math.max(minWidth, calculatedWidth);
+      }
   }
   return WithZoom as Constructor<WithZoomInterface> & T;
 };
