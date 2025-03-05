@@ -172,6 +172,7 @@ class NightingaleTrack extends withManager(
   }
 
   set data(data: Feature[]) {
+    console.log("data", data);
     this.processData(data);
     this.applyFilters();
     this.layoutObj = this.getLayout();
@@ -216,6 +217,29 @@ class NightingaleTrack extends withManager(
       this.getShape(f)
     );
   }
+
+  protected showTooltipTrack(event: MouseEvent, f: { feature: Feature }): void {
+    const tooltip = document.getElementById('tooltip');
+    if (tooltip) {
+      tooltip.style.visibility = 'visible';
+      // Ensure tooltipContent is never undefined by providing a fallback string
+      tooltip.textContent = f.feature.tooltipContent ?? "No information available";
+      tooltip.style.left = `${event.pageX + 10}px`;
+      tooltip.style.top = `${event.pageY + 10}px`;
+    } else {
+      console.error("Tooltip element not found in the DOM");
+    }
+  }
+  
+  protected hideTooltipTrack(): void {
+    const tooltip = document.getElementById('tooltip');
+    if (tooltip !== null) {  // Check if tooltip is not null
+      tooltip.style.visibility = 'hidden';
+    } else {
+      console.error("Tooltip element not found in the DOM");
+    }
+  }
+  
 
   protected getFeatureColor(f: Feature | { feature: Feature }): string {
     const defaultColor = "gray";
@@ -345,8 +369,8 @@ class NightingaleTrack extends withManager(
       )
       .style("fill", (f) => this.getFeatureFillColor(f))
       .attr("stroke", (f) => this.getFeatureColor(f))
-
-
+      .on("mouseover", (event, f) => this.showTooltipTrack(event, f))
+      .on("mouseout", () => this.hideTooltipTrack())
       .style("fill-opacity", ({ feature }) =>
         feature.opacity ? feature.opacity : 0.9
       )
@@ -422,6 +446,8 @@ class NightingaleTrack extends withManager(
       })
       .call(bindEvents, this);
   }
+
+  
 
   private applyFilters() {
     if ((this.filters || []).length <= 0) {
@@ -578,12 +604,13 @@ class NightingaleTrack extends withManager(
       .tooltip {
         position: absolute;
         visibility: hidden;
-        background-color: rgba(0, 0, 0, 0.7);
-        color: white;
+        background-color: rgba(252, 250, 250, 0.93);
+        color: #666666;
         border-radius: 4px;
         padding: 5px;
         pointer-events: none;
         font-size: 12px;
+        font-family: 'Arial', sans-serif;
         z-index: 10;
       }
     </style>
@@ -623,3 +650,5 @@ function getEndFromLocations(locations: FeatureLocation[]): number | undefined {
   }
   return end;
 }
+
+
