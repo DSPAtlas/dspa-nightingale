@@ -137,7 +137,7 @@ class NightingaleNavigation extends withManager(
         }
       })
       .on("brush", ({ selection, transform }) => {
-        if (selection && this.#x) {
+        if (selection && this.#x&& this.#brushG && this.#viewport) {
           this.#currentSelection = selection;
           this["display-start"] =
             Math.round(this.#x.invert(selection[0]) * 100) / 100;
@@ -162,7 +162,7 @@ class NightingaleNavigation extends withManager(
 
     this.#brushG = this.#svg.append("g").attr("class", "brush");
 
-    if (limit > 0) {
+    if (limit > 0 && this.#svg && this.#brushG) {
       this.#brushG.call(this.#viewport);
 
       this.#brushG.call(this.#viewport.move, [
@@ -345,7 +345,7 @@ class NightingaleNavigation extends withManager(
     highlighsRect.exit().remove();
   }
   private updateLabels() {
-    if (this.#displaystartLabel)
+    if (this.#displaystartLabel && this.#x && this.#svg && this.#brushG && this.#viewport)
       this.#displaystartLabel
         .attr("x", this["margin-left"])
         .text(Math.round(this.getStart()));
@@ -356,7 +356,7 @@ class NightingaleNavigation extends withManager(
   }
 
   private updatePolygon() {
-    if (this.#polygon && this.#x)
+    if (this.#polygon && this.#x && this.#svg && this.#brushG && this.#viewport)
       this.#polygon.attr(
         "points",
         `${this.#x(this.getStart())},${this.height / 2}

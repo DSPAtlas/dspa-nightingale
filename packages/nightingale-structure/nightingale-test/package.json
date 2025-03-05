@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-     "@dspa-nightingale/nightingale-structure": "file:/Users/ekrismer/Documents/GitHub/dspa-nightingale/packages/nightingale-structure/dist/index.js",
+    "@nightingale-elements/nightingale-manager": "^5.4.1",
+    "@nightingale-elements/nightingale-track": "^5.4.1",
     "cra-template": "1.2.0",
+    "nightingale-sequence": "file:/Users/ekrismer/Documents/GitHub/dspa-nightingale/packages/nightingale-sequence/dist/index.js",
+    "nightingale-structure": "file:/Users/ekrismer/Documents/GitHub/dspa-nightingale/packages/nightingale-structure/dist/index.js",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "^5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",

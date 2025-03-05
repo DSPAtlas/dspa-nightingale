@@ -38,6 +38,6 @@ Substract the defined margins(left and right) from the width.
 
 Substract the defined margins(top and bottom) from the height.
 
-###### `renderMarginOnGroup( g?: Selection<SVGGElement, unknown, HTMLElement | SVGElement | null, unknown>): void`
+###### `renderMarginOnGroup( g?: Selection<SVGElement, unknown, HTMLElement | SVGElement | null, unknown>): void`
 
 Given a D3 selection it renders rectangles in the position of the margins, filling them with `margin-color`

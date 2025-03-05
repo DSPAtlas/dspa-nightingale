@@ -1,0 +1,24 @@
+<!-- Firstly create an importmap to resolve module imports -->
+<script type="importmap">
+    {
+      "imports": {
+        "@nightingale-elements/": "https://cdn.jsdelivr.net/npm/@nightingale-elements/"
+      }
+    }
+  </script>
+  <!-- Import the component -->
+  <script type="module">
+    import "@nightingale-elements/nightingale-sequence@latest";
+  </script>
+  <!-- Use the component just as you would a regular HTML tag -->
+  <nightingale-sequence
+    sequence="SEQUENCESEQUENCESEQUENCESEQUENCE"
+    width="800"
+    height="40"
+    length="32"
+    display-start="10"
+    display-end="20"
+    highlight="3:15"
+    id="my-nightingale-sequence-id"
+  ></nightingale-sequence>
+  
