@@ -68,7 +68,8 @@ export const LIPColorTheme = CustomElementProperty.create({
           if (score > 5) return Color.fromRgb(218, 73, 169); 
           if (score > 4) return Color.fromRgb(242, 192, 225); 
           if (score > 3) return Color.fromRgb(251, 234, 245);
-          return Color.fromRgb(172, 193, 219); 
+          if (score > 0) return Color.fromRgb(172, 193, 219); 
+          return Color.fromRgb(204, 204, 204); 
       },
       defaultColor: Color(0xCCCCCC) 
   },
