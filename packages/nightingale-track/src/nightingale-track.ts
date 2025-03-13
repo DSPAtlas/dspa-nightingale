@@ -609,8 +609,8 @@ class NightingaleTrack extends withManager(
         border-radius: 4px;
         padding: 5px;
         pointer-events: none;
-        font-size: 12px;
-        font-family: 'Arial', sans-serif;
+        font-size: 16px;
+        font-family: 'Raleway','Arial', sans-serif;
         z-index: 10;
       }
     </style>
