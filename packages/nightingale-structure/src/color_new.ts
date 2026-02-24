@@ -62,16 +62,17 @@ export const LIPColorTheme = CustomElementProperty.create({
      
   },
   coloring: {
+      // Must match LIP_COLOR_SCALE in NightingaleComponent.jsx
       getColor: (e) => {
-          const score= e as number; // e as number;
-          if (score > 7) return Color.fromRgb(120, 33, 98);
-          if (score > 5) return Color.fromRgb(218, 73, 169); 
-          if (score > 4) return Color.fromRgb(242, 192, 225); 
-          if (score > 3) return Color.fromRgb(251, 234, 245);
-          if (score > 0) return Color.fromRgb(172, 193, 219); 
-          return Color.fromRgb(204, 204, 204); 
+          const score = e as number;
+          if (score > 7) return Color.fromRgb(120, 33, 98);    // #782162 dark purple
+          if (score > 5) return Color.fromRgb(218, 73, 169);   // #da49a9 pink
+          if (score > 4) return Color.fromRgb(242, 192, 225);  // #f2c0e1 light pink
+          if (score > 3) return Color.fromRgb(251, 234, 245);  // #fbeaf5 very light pink
+          if (score > 0) return Color.fromRgb(172, 193, 219);  // #acc1db light blue
+          return Color.fromRgb(0, 0, 0);                       // #000000 black (no data)
       },
-      defaultColor: Color(0xCCCCCC) 
+      defaultColor: Color(0x000000)
   },
   getLabel: (e) => `LIP Score: ${e}`
 });
