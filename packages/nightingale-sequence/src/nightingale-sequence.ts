@@ -72,6 +72,11 @@ class NightingaleSequence extends withManager(
   chHeight?: number;
  
 
+  getSingleBaseWidth() {
+    if (!this.xScale) return -1;
+    return this.xScale(2) - this.xScale(1);
+  }
+
   connectedCallback() {
     super.connectedCallback();
     const ticks = parseInt(this.getAttribute("numberofticks") || "", 10);
@@ -111,7 +116,6 @@ class NightingaleSequence extends withManager(
         .append("text")
         .attr("class", "base")
         .text("T");
-        console.log("temonode", tempNode);
       this.chWidth = (tempNode.node()?.getBBox().width || 0) * xratio;
       this.chHeight = (tempNode.node()?.getBBox().height || 0) * yratio;
       tempNode.remove();
@@ -183,11 +187,18 @@ class NightingaleSequence extends withManager(
 
       // only add axis if there is room
       if (this.height > (this.chWidth || 0) && this.xScale) {
-        const tickSpacing = Math.ceil((this.sequence?.length ?? 0) / (this.width / this.getSingleBaseWidth()));
+        const visibleBases = this.width / Math.max(0.1, this.getSingleBaseWidth());
+        let tickSpacing = Math.max(1, Math.ceil(visibleBases / (this.numberOfTicks || 3)));
+        
+        // Round to nicer numbers if spacing is large
+        if (tickSpacing > 100) tickSpacing = Math.ceil(tickSpacing / 50) * 50;
+        else if (tickSpacing > 20) tickSpacing = Math.ceil(tickSpacing / 10) * 10;
+        else if (tickSpacing > 5) tickSpacing = Math.ceil(tickSpacing / 5) * 5;
+
         const xAxis = axisBottom(this.xScale)
           //.tickFormat((d) => `${Number.isInteger(d) ? d : ""}`)
           //.ticks(this.numberOfTicks, "s");
-          .tickValues([...Array(this.sequence?.length).keys()].filter(i => i % tickSpacing === 0))
+          .tickValues([...Array(this.sequence?.length || 0).keys()].filter(i => i > 0 && i % tickSpacing === 0))
           .tickFormat(d => `${d}`);
         this.#axis.call(xAxis);
       }

@@ -26,6 +26,8 @@ export type HeatmapPoint = {
   value: number | null;
 };
 
+type HeatmapEventType = "mousemove" | "mouseout";
+
 @customElement("nightingale-heatmap")
 class NightingaleHeatmap extends withResizable(
   withMargin(
@@ -147,13 +149,17 @@ class NightingaleHeatmap extends withResizable(
         const xPoint = this.#x.domain()[xDomainValue];
         const yPoint = this.#y.domain()[yDomainValue];
         const value = this.drawHovered([xPoint, yPoint]);
-        this.#dispatchSelectionPoint("mousemove", { xPoint, yPoint, value });
+        this.#dispatchSelectionPoint(
+          "mousemove",
+          { xPoint, yPoint, value },
+          event,
+        );
       }
     };
 
-    const mouseout = () => {
+    const mouseout = (event: MouseEvent) => {
       this.drawHovered();
-      this.#dispatchSelectionPoint("mouseout");
+      this.#dispatchSelectionPoint("mouseout", undefined, event);
     };
 
     select(".canvas-heatmap").on("mousemove", mousemove);
@@ -168,13 +174,22 @@ class NightingaleHeatmap extends withResizable(
     if (this.#data) this.refreshHeatmap(this.#data);
   }
 
-  #dispatchSelectionPoint(type: string, d?: HeatmapPoint) {
+  #dispatchSelectionPoint(
+    type: HeatmapEventType,
+    d?: HeatmapPoint,
+    event?: MouseEvent,
+  ) {
+    const highlight = d ? `${d.xPoint}:${d.xPoint}` : undefined;
     this.dispatchEvent(
       new CustomEvent("change", {
         detail: {
+          eventType: type === "mousemove" ? "mouseover" : "mouseout",
+          coords: event ? [event.pageX, event.pageY] : null,
+          highlight,
           type,
           point: d || null,
           target: this,
+          parentEvent: event,
         },
         bubbles: true,
         cancelable: true,
