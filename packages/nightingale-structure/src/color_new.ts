@@ -35,6 +35,24 @@ interface NamedCustomProperty extends CustomProperty {
     name: string;
 }
 
+// Helper to convert hex strings (e.g., '#782162') to Mol* Color.
+const hexToColor = (hex: string) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return Color.fromRgb(r, g, b);
+};
+
+// LIP Color Scale. This is exportable, to reuse as LIP_COLOR_SCALE in NightingaleComponent.jsx
+export const LIP_SCALE = [
+    { threshold: 7,          color: '#289b22', label: '> 7' },
+    { threshold: 5,          color: '#da49a9', label: '5 - 7' },
+    { threshold: 4,          color: '#f2c0e1', label: '4 - 5' },
+    { threshold: 3,          color: '#fbeaf5', label: '3 - 4' },
+    { threshold: 0,          color: '#acc1db', label: '0 - 3' },
+    { threshold: -Infinity,  color: '#3f3d3d', label: 'no coverage' },
+];
+
 export const LIPColorTheme = CustomElementProperty.create({
   label: "LIP Score Coloring",
   name: "lip-score-coloring",
@@ -65,12 +83,10 @@ export const LIPColorTheme = CustomElementProperty.create({
       // Must match LIP_COLOR_SCALE in NightingaleComponent.jsx
       getColor: (e) => {
           const score = e as number;
-          if (score > 7) return Color.fromRgb(120, 33, 98);    // #782162 dark purple
-          if (score > 5) return Color.fromRgb(218, 73, 169);   // #da49a9 pink
-          if (score > 4) return Color.fromRgb(242, 192, 225);  // #f2c0e1 light pink
-          if (score > 3) return Color.fromRgb(251, 234, 245);  // #fbeaf5 very light pink
-          if (score > 0) return Color.fromRgb(172, 193, 219);  // #acc1db light blue
-          return Color.fromRgb(0, 0, 0);                       // #000000 black (no data)
+          for (const entry of LIP_SCALE) {
+              if (score > entry.threshold) return hexToColor(entry.color);
+          }
+          return hexToColor(LIP_SCALE[LIP_SCALE.length - 1].color);
       },
       defaultColor: Color(0x000000)
   },

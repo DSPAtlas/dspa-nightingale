@@ -208,9 +208,14 @@ class NightingaleStructure extends withManager(
     this.#structureViewer?.plugin.clear();
     this.showMessage("Loading", pdbId);
     try {
-      return await fetch(`${uniProtMappingUrl}${pdbId}`).then((r) => r.json());
+      const response = await fetch(`${uniProtMappingUrl}${pdbId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
     } catch (e) {
       this.showMessage("Error", `Couldn't load PDB entry "${pdbId}"`);
+      console.error(e);
       throw e;
     }
   }
@@ -219,9 +224,14 @@ class NightingaleStructure extends withManager(
     this.#structureViewer?.plugin.clear();
     this.showMessage("Loading", id);
     try {
-      return await fetch(`${alphaFoldMappingUrl}${id}`).then((r) => r.json());
+      const response = await fetch(`${alphaFoldMappingUrl}${id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
     } catch (e) {
       this.showMessage("Error", `Couldn't load AF entry "${id}"`);
+      console.error(e);
       throw e;
     }
   }
@@ -240,31 +250,38 @@ class NightingaleStructure extends withManager(
     console.log("lip array load", lipscoreArray);
 
     let mappings;
-    if (this.isAF()) {
-      const afPredictions = await this.loadAFEntry(this["protein-accession"]);
-      const afInfo = afPredictions.find(
-        (prediction) => prediction.entryId === this["structure-id"],
-      );
-      if (afInfo?.cifUrl) {
-        console.log(afInfo.cifUrl);
-        await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, lipscoreArray, false);
-        this.clearMessage();
-      }
-    } else {
-      const pdbEntry = await this.loadPDBEntry(this["structure-id"]);
-      mappings =
-        Object.values(pdbEntry)[0].UniProt[this["protein-accession"]]?.mappings;
-        if (this["custom-download-url"]) {
-          await this.#structureViewer?.loadCifUrl(
-            `${this["custom-download-url"]}${this["structure-id"].toLowerCase()}.cif`, lipscoreArray
+    try {
+      if (this.isAF()) {
+        const afPredictions = await this.loadAFEntry(this["protein-accession"]);
+        const afInfo = afPredictions.find(
+          (prediction) => prediction.entryId === this["structure-id"],
+        );
+        if (afInfo?.cifUrl) {
+          console.log(afInfo.cifUrl);
+          await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, lipscoreArray, false);
+          this.clearMessage();
+        } else {
+          this.showMessage("Error", `Could not find AF entry for ${this["structure-id"]}`);
+        }
+      } else {
+        const pdbEntry = await this.loadPDBEntry(this["structure-id"]);
+        mappings =
+          Object.values(pdbEntry)[0].UniProt[this["protein-accession"]]?.mappings;
+          if (this["custom-download-url"]) {
+            await this.#structureViewer?.loadCifUrl(
+              `${this["custom-download-url"]}${this["structure-id"].toLowerCase()}.cif`, lipscoreArray
+            );
+            this.clearMessage();
+        } else {
+          await this.#structureViewer?.loadPdb(
+            this["structure-id"].toLowerCase(),
           );
           this.clearMessage();
-      } else {
-        await this.#structureViewer?.loadPdb(
-          this["structure-id"].toLowerCase(),
-        );
-        this.clearMessage();
+        }
       }
+    } catch (e) {
+      console.error('Error selecting molecule:', e);
+      // Errors are already displayed via showMessage in loadAFEntry/loadPDBEntry
     }
     this.selectedMolecule = {
       id: this["structure-id"],
