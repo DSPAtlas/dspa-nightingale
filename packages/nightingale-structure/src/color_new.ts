@@ -43,6 +43,54 @@ const hexToColor = (hex: string) => {
     return Color.fromRgb(r, g, b);
 };
 
+const hexToRgb = (hex: string) => ({
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+});
+
+const interpolateChannel = (start: number, end: number, ratio: number) =>
+    Math.round(start + (end - start) * ratio);
+
+const getInterpolatedLipColor = (score: number) => {
+    const noCoverageColor = LIP_SCALE[LIP_SCALE.length - 1].color;
+
+    if (!Number.isFinite(score) || score <= 0) {
+        return hexToColor(noCoverageColor);
+    }
+
+    const gradientStops = LIP_SCALE.filter((entry) => Number.isFinite(entry.threshold)).sort(
+        (left, right) => left.threshold - right.threshold
+    );
+
+    if (score <= gradientStops[0].threshold) {
+        return hexToColor(gradientStops[0].color);
+    }
+
+    if (score >= gradientStops[gradientStops.length - 1].threshold) {
+        return hexToColor(gradientStops[gradientStops.length - 1].color);
+    }
+
+    for (let i = 0; i < gradientStops.length - 1; i++) {
+        const lowerStop = gradientStops[i];
+        const upperStop = gradientStops[i + 1];
+
+        if (score <= upperStop.threshold) {
+            const ratio = (score - lowerStop.threshold) / (upperStop.threshold - lowerStop.threshold);
+            const lowerColor = hexToRgb(lowerStop.color);
+            const upperColor = hexToRgb(upperStop.color);
+
+            return Color.fromRgb(
+                interpolateChannel(lowerColor.r, upperColor.r, ratio),
+                interpolateChannel(lowerColor.g, upperColor.g, ratio),
+                interpolateChannel(lowerColor.b, upperColor.b, ratio)
+            );
+        }
+    }
+
+    return hexToColor(gradientStops[gradientStops.length - 1].color);
+};
+
 // LIP Color Scale. This is exportable, to reuse as LIP_COLOR_SCALE in NightingaleComponent.jsx
 export const LIP_SCALE = [
     { threshold: 7,          color: '#289b22', label: '> 7' },
@@ -83,10 +131,7 @@ export const LIPColorTheme = CustomElementProperty.create({
       // Must match LIP_COLOR_SCALE in NightingaleComponent.jsx
       getColor: (e) => {
           const score = e as number;
-          for (const entry of LIP_SCALE) {
-              if (score > entry.threshold) return hexToColor(entry.color);
-          }
-          return hexToColor(LIP_SCALE[LIP_SCALE.length - 1].color);
+          return getInterpolatedLipColor(score);
       },
       defaultColor: Color(0x000000)
   },

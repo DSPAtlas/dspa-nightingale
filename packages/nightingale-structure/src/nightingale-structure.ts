@@ -108,6 +108,14 @@ class NightingaleStructure extends withManager(
     this.updateHighlight = this.updateHighlight.bind(this);
   }
 
+  private zoomIn = () => {
+    this.#structureViewer?.zoom(0.8);
+  };
+
+  private zoomOut = () => {
+    this.#structureViewer?.zoom(1.25);
+  };
+
   protected render() {
     return html`<style>
         nightingale-structure {
@@ -137,12 +145,43 @@ class NightingaleStructure extends withManager(
           font-weight: bold;
           margin-inline-start: 1ch;
         }
+
+        .structure-viewer-zoom-controls {
+          position: absolute;
+          right: 1rem;
+          bottom: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          z-index: 1;
+        }
+
+        .structure-viewer-zoom-controls button {
+          width: 2.25rem;
+          height: 2.25rem;
+          border: 1px solid gray;
+          border-radius: 0.25rem;
+          background: rgba(255, 255, 255, 0.9);
+          color: #222;
+          font-size: 1.25rem;
+          font-weight: bold;
+          cursor: pointer;
+          line-height: 1;
+        }
+
+        .structure-viewer-zoom-controls button:hover {
+          background: rgba(255, 255, 255, 1);
+        }
       </style>
       <div id="molstar-parent" class="structure-viewer-container">
         <canvas
           id="molstar-canvas"
           style="position: absolute; top: 0; left: 0; right: 0; bottom: 0"
         ></canvas>
+        <div class="structure-viewer-zoom-controls">
+          <button type="button" title="Zoom in" @click="${this.zoomIn}">+</button>
+          <button type="button" title="Zoom out" @click="${this.zoomOut}">−</button>
+        </div>
         ${this.message
           ? html`<div class="structure-viewer-messages">
               <span>${this.message?.title}:</span> ${this.message?.content}
@@ -185,6 +224,11 @@ class NightingaleStructure extends withManager(
   protected updated(changedProperties: Map<PropertyKey, unknown>): void {
     if (changedProperties.has("structure-id")) {
       this.selectMolecule();
+    }
+    if (changedProperties.has("lipscore-array")) {
+      const lipscoreArray = this["lipscore-array"] || [];
+      this.#structureViewer?.addLiPScores(lipscoreArray);
+      this.#structureViewer?.applyLipColorTheme();
     }
     if (
       changedProperties.has("highlight") ||

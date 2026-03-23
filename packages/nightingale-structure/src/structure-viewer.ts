@@ -12,7 +12,9 @@ import { PluginLayoutControlsDisplay } from "molstar/lib/mol-plugin/layout";
 import { Script } from "molstar/lib/mol-script/script";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { Color } from "molstar/lib/mol-util/color";
+import { ValueBox } from "molstar/lib/mol-util/value-cell";
 import { ChainIdColorThemeProvider } from "molstar/lib/mol-theme/color/chain-id";
+import { Vec3 } from "molstar/lib/mol-math/linear-algebra";
 
 import {LIPColorTheme} from './color_new';
 
@@ -106,6 +108,7 @@ export type StructureViewer = {
   highlight(ranges: Range[]): void;
   clearHighlight(): void;
   changeHighlightColor(color: number): void;
+  zoom(factor: number): void;
   handleResize(): void;
   addLiPScores(lipscoreArray: Array<number>): void;
   applyLipColorTheme(): void;
@@ -202,10 +205,6 @@ const structureViewer: StructureViewer = {
   },
   addLiPScores(lipscoreArray: Array<number>) {
     const structureData = plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
-    if (!lipscoreArray || lipscoreArray.length === 0) {
-      console.error('lipScoreArray is null or empty. Skipping LiP scores application.');
-      return structureData;
-    }
     if(!structureData){
       return;
     }
@@ -215,6 +214,11 @@ const structureViewer: StructureViewer = {
       lipScoresMap.set(index, score);
     });
   
+    // Mol* exposes all models parsed from the loaded structure file here.
+    // In our current usage (AlphaFold and the typical PDB entries we show),
+    // the first item is the main/usually only protein model, so we attach the
+    // LiP score data to models[0]. Extra entries would only appear for true
+    // multi-model files such as NMR ensembles.
     const modelData = structureData.models?.[0]._staticPropertyData;
     if (!modelData) {
       console.error("Model data is missing in the structure data.");
@@ -226,11 +230,22 @@ const structureViewer: StructureViewer = {
     modelData.ma_quality_assessment.data = modelData.ma_quality_assessment.data || { value: { lipScore: undefined, localMetrics: undefined } };
     modelData.ma_quality_assessment.data.value = modelData.ma_quality_assessment.data.value || { lipScore: undefined, localMetrics: undefined };
     modelData.ma_quality_assessment.data.value.localMetrics = modelData.ma_quality_assessment.data.value.localMetrics || new Map();
-  
+
     // Assign the LiP scores map
     modelData.ma_quality_assessment.data.value.lipScore = lipScoresMap;
     modelData.ma_quality_assessment.data.value.localMetrics = lipScoresMap;
-  
+
+    const model = structureData.models?.[0];
+    const lipPropertyName = LIPColorTheme.propertyProvider.descriptor.name;
+    const lipPropertyContainer = model?._dynamicPropertyData?.[lipPropertyName]
+      ?? model?._staticPropertyData?.[lipPropertyName];
+    if (lipPropertyContainer?.data) {
+      lipPropertyContainer.data = ValueBox.withValue(
+        lipPropertyContainer.data,
+        new Map(lipScoresMap)
+      );
+    }
+
     console.log('LiP scores successfully added to structure data.');
     console.log('Updated structure data:', JSON.stringify(modelData, null, 2));
   },
@@ -300,6 +315,29 @@ const structureViewer: StructureViewer = {
         renderer.highlightColor = Color(color);
       },
     });
+  },
+
+  zoom(factor: number) {
+    const camera = plugin.canvas3d?.camera;
+    if (!camera || factor <= 0) {
+      return;
+    }
+
+    const snapshot = camera.getSnapshot();
+    const direction = Vec3.sub(Vec3(), snapshot.position, snapshot.target);
+    const currentDistance = Vec3.magnitude(direction);
+    if (!Number.isFinite(currentDistance) || currentDistance === 0) {
+      return;
+    }
+
+    const nextDistance = Math.max(currentDistance * factor, 1);
+    const nextDirection = Vec3.setMagnitude(direction, direction, nextDistance);
+    const nextPosition = Vec3.add(Vec3(), snapshot.target, nextDirection);
+    plugin.managers.camera.setSnapshot({
+      position: nextPosition,
+      radius: Math.max(snapshot.radius * factor, 0.1),
+      radiusMax: Math.max(snapshot.radiusMax * factor, 0.1),
+    }, 150);
   },
 
   handleResize() {
