@@ -239,10 +239,22 @@ const structureViewer: StructureViewer = {
     const lipPropertyName = LIPColorTheme.propertyProvider.descriptor.name;
     const lipPropertyContainer = model?._dynamicPropertyData?.[lipPropertyName]
       ?? model?._staticPropertyData?.[lipPropertyName];
-    if (lipPropertyContainer?.data) {
+    if (lipPropertyContainer?.data && model) {
+      const residueIndex = model.atomicHierarchy.residueAtomSegments.index;
+      const label_seq_id = model.atomicHierarchy.residues.label_seq_id;
+      const residueRowCount = model.atomicHierarchy.atoms._rowCount;
+
+      const lipMap = new Map();
+      for (let i = 0; i < residueRowCount; i++) {
+        const resId = residueIndex[i];
+        const seqId = label_seq_id.value(resId) as number;
+        const score = lipScoresMap.get(seqId - 1);
+        lipMap.set(i, score !== undefined ? score : 0);
+      }
+
       lipPropertyContainer.data = ValueBox.withValue(
         lipPropertyContainer.data,
-        new Map(lipScoresMap)
+        lipMap
       );
     }
 

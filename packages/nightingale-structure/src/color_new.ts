@@ -98,29 +98,32 @@ export const LIP_SCALE = [
     { threshold: 4,          color: '#f2c0e1', label: '4 - 5' },
     { threshold: 3,          color: '#fbeaf5', label: '3 - 4' },
     { threshold: 0,          color: '#acc1db', label: '0 - 3' },
-    { threshold: -Infinity,  color: '#3f3d3d', label: 'no coverage' },
+    { threshold: -Infinity,          color: '#ff0000', label: 'no c' },
+    // { threshold: -Infinity,  color: '#3f3d3d', label: 'no coverage' },
 ];
 
 export const LIPColorTheme = CustomElementProperty.create({
   label: "LIP Score Coloring",
   name: "lip-score-coloring",
   getData: (model) => {
-      const lip = Array.from(model._staticPropertyData?.ma_quality_assessment?.data?.value.lipScore.values());
+      const lipScoreMap = model._staticPropertyData?.ma_quality_assessment?.data?.value.lipScore;
       
-      if (lip && model.atomicHierarchy.residueAtomSegments) {
+      if (lipScoreMap && model.atomicHierarchy.residueAtomSegments) {
         const residueIndex = model.atomicHierarchy.residueAtomSegments.index;
+        const label_seq_id = model.atomicHierarchy.residues.label_seq_id;
         const residueRowCount = model.atomicHierarchy.atoms._rowCount;
   
-        // Create a map where residue indices are keys, and LiP scores are values
+        // Create a map where atom indices are keys, and LiP scores are values
         const lipMap = new Map();
   
         for (let i = 0; i < residueRowCount; i++) {
-          const residueId = residueIndex[i]; // Map atom index to residue index
-          const score = lip[residueId] || 0; // Use LiP score or default to 0
-          lipMap.set(i, score); // Set atom index to score
+          const resId = residueIndex[i]; // Map atom index to internal residue index
+          const seqId = label_seq_id.value(resId); // 1-based sequence id
+          const score = lipScoreMap.get(seqId - 1); // lipScoreMap uses 0-based index
+          lipMap.set(i, score !== undefined ? score : 0); // Set atom index to score
         }
   
-        console.log('lipMap created:', model);
+        console.log('lipMap created for', residueRowCount, 'atoms');
         return { value: lipMap };
       }
 
@@ -133,7 +136,7 @@ export const LIPColorTheme = CustomElementProperty.create({
           const score = e as number;
           return getInterpolatedLipColor(score);
       },
-      defaultColor: Color(0x000000)
+      defaultColor: Color(0x0000ff)
   },
   getLabel: (e) => `LIP Score: ${e}`
 });
