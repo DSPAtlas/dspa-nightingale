@@ -225,10 +225,10 @@ class NightingaleStructure extends withManager(
     if (changedProperties.has("structure-id")) {
       this.selectMolecule();
     }
-    if (changedProperties.has("lipscore-array")) {
+    if (changedProperties.has("lipscore-array") && !changedProperties.has("structure-id")) {
       const lipscoreArray = this["lipscore-array"] || [];
       this.#structureViewer?.addLiPScores(lipscoreArray);
-      this.#structureViewer?.applyLipColorTheme();
+      this.#structureViewer?.applyLipColorTheme()?.catch(console.error);
     }
     if (
       changedProperties.has("highlight") ||
@@ -319,6 +319,7 @@ class NightingaleStructure extends withManager(
         } else {
           await this.#structureViewer?.loadPdb(
             this["structure-id"].toLowerCase(),
+            lipscoreArray,
           );
           this.clearMessage();
         }

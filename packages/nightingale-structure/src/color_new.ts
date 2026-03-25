@@ -98,8 +98,7 @@ export const LIP_SCALE = [
     { threshold: 4,          color: '#f2c0e1', label: '4 - 5' },
     { threshold: 3,          color: '#fbeaf5', label: '3 - 4' },
     { threshold: 0,          color: '#acc1db', label: '0 - 3' },
-    { threshold: -Infinity,          color: '#ff0000', label: 'no c' },
-    // { threshold: -Infinity,  color: '#3f3d3d', label: 'no coverage' },
+    { threshold: -Infinity,  color: '#3f3d3d', label: 'no coverage' },
 ];
 
 export const LIPColorTheme = CustomElementProperty.create({
@@ -136,7 +135,7 @@ export const LIPColorTheme = CustomElementProperty.create({
           const score = e as number;
           return getInterpolatedLipColor(score);
       },
-      defaultColor: Color(0x0000ff)
+      defaultColor: Color(0x3f3d3d20)
   },
   getLabel: (e) => `LIP Score: ${e}`
 });

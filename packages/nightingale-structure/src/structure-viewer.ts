@@ -103,7 +103,7 @@ type Range = { chain: string; start: number; end: number };
 
 export type StructureViewer = {
   plugin: CustomPluginContext;
-  loadPdb(pdb: string): Promise<void>;
+  loadPdb(pdb: string, lipscoreArray?: Array<number>): Promise<void>;
   loadCifUrl(url: string, lipscoreArray: Array<number>, isBinary?: boolean): Promise<void>;
   highlight(ranges: Range[]): void;
   clearHighlight(): void;
@@ -111,7 +111,7 @@ export type StructureViewer = {
   zoom(factor: number): void;
   handleResize(): void;
   addLiPScores(lipscoreArray: Array<number>): void;
-  applyLipColorTheme(): void;
+  applyLipColorTheme(): Promise<void>;
 };
 
 
@@ -175,10 +175,10 @@ PluginCommands.Canvas3D.SetSettings(plugin, {
 
 const structureViewer: StructureViewer = {
   plugin,
-  async loadPdb(pdb) {
+  async loadPdb(pdb, lipscoreArray: Array<number> = []) {
     await this.loadCifUrl(
       `https://www.ebi.ac.uk/pdbe/model-server/v1/${pdb.toLowerCase()}/full?encoding=bcif`,
-      [],
+      lipscoreArray,
       true
     );
   },
@@ -200,7 +200,7 @@ const structureViewer: StructureViewer = {
 
     plugin.customState.lipscoreArray = lipscoreArray || [];
     this.addLiPScores(lipscoreArray);  
-    this.applyLipColorTheme();
+    await this.applyLipColorTheme();
     // TODO maybe add here more logic
   },
   addLiPScores(lipscoreArray: Array<number>) {
@@ -263,8 +263,12 @@ const structureViewer: StructureViewer = {
   },
 
   applyLipColorTheme() {
-    plugin.dataTransaction(async () => {
+    return plugin.dataTransaction(async () => {
       for (const structure of plugin.managers.structure.hierarchy.current.structures || []) {
+        if (!structure?.components?.length) {
+          continue;
+        }
+
         await plugin.managers.structure.component.updateRepresentationsTheme(
           structure.components,
           {
