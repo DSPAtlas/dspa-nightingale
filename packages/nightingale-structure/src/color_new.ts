@@ -92,13 +92,14 @@ const getInterpolatedLipColor = (score: number) => {
 };
 
 // LIP Color Scale. This is exportable, to reuse as LIP_COLOR_SCALE in NightingaleComponent.jsx
+// Normalized [0, 1] range (scores from backend are min-max normalized)
 export const LIP_SCALE = [
-    { threshold: 7,          color: '#289b22', label: '> 7' },
-    { threshold: 5,          color: '#da49a9', label: '5 - 7' },
-    { threshold: 4,          color: '#f2c0e1', label: '4 - 5' },
-    { threshold: 3,          color: '#fbeaf5', label: '3 - 4' },
-    { threshold: 0,          color: '#acc1db', label: '0 - 3' },
-    { threshold: -Infinity,  color: '#3f3d3d', label: 'no coverage' },
+    { threshold: 1.0,        color: '#289b22', label: 'Very High ( ≥ 0.8 )' },
+    { threshold: 0.8,       color: '#da49a9', label: 'High ( 0.7 - 0.8 )' },
+    { threshold: 0.6,       color: '#f2c0e1', label: 'Medium-High ( 0.6 - 0.7 )' },
+    { threshold: 0.4,       color: '#fbeaf5', label: 'Medium ( 0.4-0.6 )' },
+    { threshold: 0.0,        color: '#acc1db', label: 'Low ( < 0.4 )' },
+    { threshold: -Infinity,  color: '#3f3d3d', label: 'No coverage' },
 ];
 
 export const LIPColorTheme = CustomElementProperty.create({
