@@ -10,7 +10,7 @@ const heatmapStyles = `
 
 .heatmap-tooltip-box,
 .heatmap-pinned-tooltip-box {
-    z-index: 1000;
+    z-index: 2147483647;
     /* Avoid tooltip flickering */
     pointer-events: none;
 }
@@ -27,6 +27,8 @@ const heatmapStyles = `
     pointer-events: initial;
     width: max-content;
     line-height: 1;
+    max-width: calc(100vw - 24px);
+    white-space: normal;
 }
 
 .heatmap-pinned-tooltip-close {

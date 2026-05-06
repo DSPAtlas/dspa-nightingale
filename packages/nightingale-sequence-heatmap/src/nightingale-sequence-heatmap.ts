@@ -25,6 +25,9 @@ import heatmapStyleSheet from "./heatmap-component.css";
 
 const ALPHAMISSENSE_BLUE = "#3d5493";
 const ALPHAMISSENSE_RED = "#9a131a";
+
+const TOOLTIP_EDGE_MARGIN = 8;
+const TOOLTIP_MAX_WIDTH = 360;
 interface HotmapData {
   xValue: number;
   yValue: string;
@@ -177,6 +180,15 @@ class NightingaleSequenceHeatmap extends withManager(
             fill: ${colorString} !important;
             fill-opacity: ${fillValue} !important;
             stroke-width: ${highlightWidth} !important;
+          }
+          .heatmap-tooltip-box,
+          .heatmap-pinned-tooltip-box {
+            z-index: 2147483647 !important;
+          }
+          .heatmap-tooltip-content,
+          .heatmap-pinned-tooltip-content {
+            max-width: min(360px, calc(100vw - 24px));
+            white-space: normal;
           }
           ${heatmapStyleSheet}
         </style>
@@ -363,6 +375,26 @@ class NightingaleSequenceHeatmap extends withManager(
    * Main heatmap rendering function. Should only be triggered once
    * Necessary to bind zoom and hover events between Heatmap component and Nightingale
    */
+
+  private constrainTooltipPosition(hm: Heatmap<number, string, HotmapData>) {
+    const tooltipBehavior = (hm as any).extensions?.tooltip;
+    if (!tooltipBehavior?.getTooltipPosition) return;
+
+    const originalGetTooltipPosition = tooltipBehavior.getTooltipPosition.bind(tooltipBehavior);
+    tooltipBehavior.getTooltipPosition = (event: MouseEvent | { offsetX?: number; offsetY?: number }) => {
+      const position = originalGetTooltipPosition(event);
+      const canvasWidth = tooltipBehavior.state?.boxes?.canvas
+        ? Box.width(tooltipBehavior.state.boxes.canvas)
+        : this.width;
+      const offsetX = event.offsetX ?? 0;
+
+      if (offsetX + TOOLTIP_MAX_WIDTH + TOOLTIP_EDGE_MARGIN > canvasWidth) {
+        position.left = `${Math.max(0, canvasWidth - TOOLTIP_MAX_WIDTH - TOOLTIP_EDGE_MARGIN)}px`;
+      }
+
+      return position;
+    };
+  }
   renderHeatmap() {
     const hm = Heatmap.create({
       xDomain: this.heatmapDomainX!,
@@ -379,6 +411,7 @@ class NightingaleSequenceHeatmap extends withManager(
         return "none";
       },
     });
+    this.constrainTooltipPosition(hm);
 
     const dataMin = Math.min(...this.heatmapData!.map((datum) => datum.score));
     const dataMax = Math.max(...this.heatmapData!.map((datum) => datum.score));
