@@ -258,8 +258,8 @@ const structureViewer: StructureViewer = {
       );
     }
 
-    console.log('LiP scores successfully added to structure data.');
-    console.log('Updated structure data:', JSON.stringify(modelData, null, 2));
+    // console.log('LiP scores successfully added to structure data.');
+    // console.log('Updated structure data:', JSON.stringify(modelData, null, 2));
   },
 
   applyLipColorTheme() {
