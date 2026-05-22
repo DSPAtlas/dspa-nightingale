@@ -162,9 +162,11 @@ class NightingaleNavigation extends withManager(
 
     this.#brushG = this.#svg.append("g").attr("class", "brush");
 
-    if (limit > 0 && this.#svg && this.#brushG) {
+    if (this.#svg && this.#brushG) {
       this.#brushG.call(this.#viewport);
+    }
 
+    if (limit > 0 && this.#svg && this.#brushG) {
       this.#brushG.call(this.#viewport.move, [
         this.#x(this.getStart()),
         this.#x(this.getEnd()),

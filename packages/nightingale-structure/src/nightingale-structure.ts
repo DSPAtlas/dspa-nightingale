@@ -108,6 +108,14 @@ class NightingaleStructure extends withManager(
     this.updateHighlight = this.updateHighlight.bind(this);
   }
 
+  private zoomIn = () => {
+    this.#structureViewer?.zoom(0.8);
+  };
+
+  private zoomOut = () => {
+    this.#structureViewer?.zoom(1.25);
+  };
+
   protected render() {
     return html`<style>
         nightingale-structure {
@@ -137,12 +145,43 @@ class NightingaleStructure extends withManager(
           font-weight: bold;
           margin-inline-start: 1ch;
         }
+
+        .structure-viewer-zoom-controls {
+          position: absolute;
+          right: 1rem;
+          bottom: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          z-index: 1;
+        }
+
+        .structure-viewer-zoom-controls button {
+          width: 2.25rem;
+          height: 2.25rem;
+          border: 1px solid gray;
+          border-radius: 0.25rem;
+          background: rgba(255, 255, 255, 0.9);
+          color: #222;
+          font-size: 1.25rem;
+          font-weight: bold;
+          cursor: pointer;
+          line-height: 1;
+        }
+
+        .structure-viewer-zoom-controls button:hover {
+          background: rgba(255, 255, 255, 1);
+        }
       </style>
       <div id="molstar-parent" class="structure-viewer-container">
         <canvas
           id="molstar-canvas"
           style="position: absolute; top: 0; left: 0; right: 0; bottom: 0"
         ></canvas>
+        <div class="structure-viewer-zoom-controls">
+          <button type="button" title="Zoom in" @click="${this.zoomIn}">+</button>
+          <button type="button" title="Zoom out" @click="${this.zoomOut}">−</button>
+        </div>
         ${this.message
           ? html`<div class="structure-viewer-messages">
               <span>${this.message?.title}:</span> ${this.message?.content}
@@ -186,6 +225,11 @@ class NightingaleStructure extends withManager(
     if (changedProperties.has("structure-id")) {
       this.selectMolecule();
     }
+    if (changedProperties.has("lipscore-array") && !changedProperties.has("structure-id")) {
+      const lipscoreArray = this["lipscore-array"] || [];
+      this.#structureViewer?.addLiPScores(lipscoreArray);
+      this.#structureViewer?.applyLipColorTheme()?.catch(console.error);
+    }
     if (
       changedProperties.has("highlight") ||
       changedProperties.has("selectedMolecule")
@@ -208,9 +252,14 @@ class NightingaleStructure extends withManager(
     this.#structureViewer?.plugin.clear();
     this.showMessage("Loading", pdbId);
     try {
-      return await fetch(`${uniProtMappingUrl}${pdbId}`).then((r) => r.json());
+      const response = await fetch(`${uniProtMappingUrl}${pdbId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
     } catch (e) {
       this.showMessage("Error", `Couldn't load PDB entry "${pdbId}"`);
+      console.error(e);
       throw e;
     }
   }
@@ -219,9 +268,14 @@ class NightingaleStructure extends withManager(
     this.#structureViewer?.plugin.clear();
     this.showMessage("Loading", id);
     try {
-      return await fetch(`${alphaFoldMappingUrl}${id}`).then((r) => r.json());
+      const response = await fetch(`${alphaFoldMappingUrl}${id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
     } catch (e) {
       this.showMessage("Error", `Couldn't load AF entry "${id}"`);
+      console.error(e);
       throw e;
     }
   }
@@ -240,31 +294,39 @@ class NightingaleStructure extends withManager(
     console.log("lip array load", lipscoreArray);
 
     let mappings;
-    if (this.isAF()) {
-      const afPredictions = await this.loadAFEntry(this["protein-accession"]);
-      const afInfo = afPredictions.find(
-        (prediction) => prediction.entryId === this["structure-id"],
-      );
-      if (afInfo?.cifUrl) {
-        console.log(afInfo.cifUrl);
-        await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, lipscoreArray, false);
-        this.clearMessage();
-      }
-    } else {
-      const pdbEntry = await this.loadPDBEntry(this["structure-id"]);
-      mappings =
-        Object.values(pdbEntry)[0].UniProt[this["protein-accession"]]?.mappings;
-        if (this["custom-download-url"]) {
-          await this.#structureViewer?.loadCifUrl(
-            `${this["custom-download-url"]}${this["structure-id"].toLowerCase()}.cif`, lipscoreArray
+    try {
+      if (this.isAF()) {
+        const afPredictions = await this.loadAFEntry(this["protein-accession"]);
+        const afInfo = afPredictions.find(
+          (prediction) => prediction.entryId === this["structure-id"],
+        );
+        if (afInfo?.cifUrl) {
+          console.log(afInfo.cifUrl);
+          await this.#structureViewer?.loadCifUrl(afInfo.cifUrl, lipscoreArray, false);
+          this.clearMessage();
+        } else {
+          this.showMessage("Error", `Could not find AF entry for ${this["structure-id"]}`);
+        }
+      } else {
+        const pdbEntry = await this.loadPDBEntry(this["structure-id"]);
+        mappings =
+          Object.values(pdbEntry)[0].UniProt[this["protein-accession"]]?.mappings;
+          if (this["custom-download-url"]) {
+            await this.#structureViewer?.loadCifUrl(
+              `${this["custom-download-url"]}${this["structure-id"].toLowerCase()}.cif`, lipscoreArray
+            );
+            this.clearMessage();
+        } else {
+          await this.#structureViewer?.loadPdb(
+            this["structure-id"].toLowerCase(),
+            lipscoreArray,
           );
           this.clearMessage();
-      } else {
-        await this.#structureViewer?.loadPdb(
-          this["structure-id"].toLowerCase(),
-        );
-        this.clearMessage();
+        }
       }
+    } catch (e) {
+      console.error('Error selecting molecule:', e);
+      // Errors are already displayed via showMessage in loadAFEntry/loadPDBEntry
     }
     this.selectedMolecule = {
       id: this["structure-id"],
